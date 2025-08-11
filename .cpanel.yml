@@ -1,0 +1,10 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=public_html/pos.theacumentechnologies.com
+    - /bin/mkdir -p "$DEPLOYPATH"
+    - /bin/cp -R index.php login.php logout.php README.md database.sql "$DEPLOYPATH"
+    - /bin/cp -R includes "$DEPLOYPATH"
+    - /bin/cp -R modules "$DEPLOYPATH"
+    - /bin/find "$DEPLOYPATH" -type f -name "*.php" -exec /bin/chmod 644 {} \;
+    - /bin/find "$DEPLOYPATH" -type d -exec /bin/chmod 755 {} \;
