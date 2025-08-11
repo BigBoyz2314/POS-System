@@ -33,4 +33,7 @@ sessions/
 .cphorde/
 .cpanel/
 
+# Sensitive database config
+includes/db.php
+
 
