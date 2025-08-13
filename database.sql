@@ -30,6 +30,7 @@ CREATE TABLE products (
     sku VARCHAR(50) UNIQUE NOT NULL,
     price DECIMAL(10,2) NOT NULL,
     cost_price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    tax_rate DECIMAL(5,2) NOT NULL DEFAULT 0.00,
     stock INT NOT NULL DEFAULT 0,
     category_id INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -42,6 +43,8 @@ CREATE TABLE sales (
     id INT AUTO_INCREMENT PRIMARY KEY,
     date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     total_amount DECIMAL(10,2) NOT NULL,
+    subtotal_amount DECIMAL(10,2) NOT NULL,
+    tax_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
     discount_amount DECIMAL(10,2) DEFAULT 0.00,
     payment_method ENUM('cash', 'card', 'mixed') DEFAULT 'cash',
     cash_amount DECIMAL(10,2) DEFAULT 0.00,
@@ -58,6 +61,8 @@ CREATE TABLE sale_items (
     product_id INT NOT NULL,
     quantity INT NOT NULL,
     price DECIMAL(10,2) NOT NULL,
+    tax_rate DECIMAL(5,2) NOT NULL DEFAULT 0.00,
+    tax_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
     FOREIGN KEY (sale_id) REFERENCES sales(id) ON DELETE CASCADE,
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );

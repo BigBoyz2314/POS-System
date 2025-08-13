@@ -47,7 +47,7 @@ try {
     $sale = mysqli_fetch_assoc($result);
 
     // Get sale items
-    $stmt = mysqli_prepare($conn, "SELECT si.*, p.name as product_name 
+    $stmt = mysqli_prepare($conn, "SELECT si.*, p.name as product_name, si.tax_rate 
                                    FROM sale_items si 
                                    JOIN products p ON si.product_id = p.id 
                                    WHERE si.sale_id = ?");
@@ -65,7 +65,8 @@ try {
         $items[] = [
             'name' => $item['product_name'],
             'quantity' => $item['quantity'],
-            'price' => $item['price']
+            'price' => $item['price'],
+            'tax_rate' => $item['tax_rate']
         ];
     }
 

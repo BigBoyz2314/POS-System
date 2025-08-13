@@ -284,64 +284,10 @@ include '../includes/header.php';
     </div>
 </div>
 
-<!-- Print-only invoice content -->
-<div id="printInvoice" class="hidden">
-    <div id="printInvoiceContent">
-        <!-- Print content will be populated here -->
-    </div>
+<!-- Hidden div for print content -->
+<div id="printInvoiceContent" style="display: none !important; position: absolute !important; left: -9999px !important; top: -9999px !important; visibility: hidden !important; opacity: 0 !important; z-index: -9999 !important;">
+    <!-- Print content will be populated here -->
 </div>
-
-<style>
-.duplicate-watermark { display: none; }
-@media print {
-    body * {
-        visibility: hidden;
-    }
-    #printInvoice, #printInvoice * {
-        visibility: visible;
-    }
-    #printInvoice {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        padding: 20px;
-        page-break-after: avoid;
-        page-break-inside: avoid;
-    }
-    #printInvoiceContent {
-        page-break-after: avoid;
-        page-break-inside: avoid;
-    }
-    .no-print {
-        display: none !important;
-    }
-    
-    /* Single invoice with DUPLICATE watermark */
-    .print-wrapper {
-        position: relative;
-    }
-    .duplicate-watermark {
-        display: block;
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%) rotate(-30deg);
-        font-size: 40px;
-        color: rgba(0,0,0,0.08);
-        letter-spacing: 4px;
-        z-index: 0;
-        pointer-events: none;
-        user-select: none;
-        text-transform: uppercase;
-        font-weight: 900;
-    }
-    #printInvoiceContent > * {
-        position: relative;
-        z-index: 1;
-    }
-}
-</style>
 
 <script>
 // Show/hide custom date inputs based on filter selection
@@ -384,41 +330,44 @@ function viewInvoice(saleId) {
 // Show invoice modal
 function showInvoice(saleData) {
     const invoiceContent = document.getElementById('invoiceContent');
-    const printInvoiceContent = document.getElementById('printInvoiceContent');
-    const currentDate = new Date(saleData.date).toLocaleDateString();
-    const currentTime = new Date(saleData.date).toLocaleTimeString();
     
     let itemsHTML = '';
     saleData.items.forEach(item => {
         const price = parseFloat(item.price);
         const quantity = parseInt(item.quantity);
-        const itemTotal = price * quantity;
+        const taxRate = parseFloat(item.tax_rate) || 0;
+        const itemTotal = price * quantity; // Tax-inclusive total
+        const itemSubtotal = taxRate > 0 ? (itemTotal / (1 + taxRate / 100)) : itemTotal;
+        const itemTax = itemTotal - itemSubtotal;
+        
         itemsHTML += `
-            <tr class="border-b">
-                <td class="py-2 text-left">${item.name}</td>
-                <td class="py-2 text-center">${item.quantity}</td>
-                <td class="py-2 text-right">${price.toFixed(2)}</td>
-                <td class="py-2 text-right">${itemTotal.toFixed(2)}</td>
+            <tr class="">
+                <td class="py-1 text-left text-xs" style="padding: 2px; font-size: 12px;">${item.name}</td>
+                <td class="py-1 text-center text-xs" style="padding: 2px; font-size: 12px;">${item.quantity}</td>
+                <td class="py-1 text-right text-xs" style="padding: 2px; font-size: 12px;">${price.toFixed(2)}</td>
+                <td class="py-1 text-right text-xs" style="padding: 2px; font-size: 12px;">${itemTotal.toFixed(2)}</td>
             </tr>
+            <tr><td colspan="4" class="py-0 text-right text-xs" style="padding: 1px 2px; font-size: 10px; color: #666;">Tax: PKR ${itemTax.toFixed(2)} (${taxRate}%)</td></tr>
+            <tr style="height: 2px;"><td colspan="4" style="border-bottom: 1px solid #ddd; padding: 0;"></td></tr>
         `;
     });
     
     const invoiceHTML = `
-        <div class="text-left">
-            <div class="text-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-900">INVOICE</h2>
-                <p class="text-gray-600">Sale #${saleData.id}</p>
-                <p class="text-gray-600">${currentDate} ${currentTime}</p>
+        <div class="text-left" style="font-size: 14px; line-height: 1.3; width: 100%; margin: 0; padding: 0 3mm;">
+            <div class="text-center mb-1" style="margin-bottom: 3px;">
+                <h2 class="text-lg font-bold text-gray-900" style="font-size: 18px; margin: 0;">INVOICE</h2>
+                <p class="text-xs text-gray-600" style="font-size: 12px; margin: 2px 0;">Sale #${saleData.id}</p>
+                <p class="text-xs text-gray-600" style="font-size: 12px; margin: 2px 0;">${new Date(saleData.date).toLocaleDateString()} ${new Date(saleData.date).toLocaleTimeString()}</p>
             </div>
             
-            <div class="mb-6">
-                <table class="w-full">
+            <div class="mb-1" style="margin-bottom: 3px;">
+                <table class="w-full text-xs" style="font-size: 12px; margin: 2px 0; table-layout: fixed;">
                     <thead>
-                        <tr class="border-b-2 border-gray-300">
-                            <th class="py-2 text-left">Item</th>
-                            <th class="py-2 text-center">Qty</th>
-                            <th class="py-2 text-right">Price</th>
-                            <th class="py-2 text-right">Total</th>
+                        <tr class="border-b border-gray-300">
+                            <th class="py-1 text-left" style="padding: 2px; font-size: 12px; width: 45%;">Item</th>
+                            <th class="py-1 text-center" style="padding: 2px; font-size: 12px; width: 15%;">Qty</th>
+                            <th class="py-1 text-right" style="padding: 2px; font-size: 12px; width: 20%;">Price</th>
+                            <th class="py-1 text-right" style="padding: 2px; font-size: 12px; width: 20%;">Total</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -427,33 +376,41 @@ function showInvoice(saleData) {
                 </table>
             </div>
             
-            <div class="border-t pt-4">
-                <div class="flex justify-between mb-2">
-                    <span>Subtotal:</span>
-                    <span>PKR ${parseFloat(saleData.total_amount).toFixed(2)}</span>
-                </div>
-                <div class="flex justify-between mb-2">
-                    <span>Discount:</span>
-                    <span>-PKR ${parseFloat(saleData.discount_amount).toFixed(2)}</span>
-                </div>
-                <div class="flex justify-between font-bold text-lg">
-                    <span>Total:</span>
-                    <span>PKR ${(parseFloat(saleData.total_amount) - parseFloat(saleData.discount_amount)).toFixed(2)}</span>
-                </div>
+            <div class="border-t pt-1" style="margin-top: 3px;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                        <td style="text-align: left; padding: 1px 2px; font-size: 12px;">Subtotal:</td>
+                        <td style="text-align: right; padding: 1px 2px; font-size: 12px;">PKR ${parseFloat(saleData.subtotal_amount || saleData.total_amount).toFixed(2)}</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: left; padding: 1px 2px; font-size: 12px;">Tax:</td>
+                        <td style="text-align: right; padding: 1px 2px; font-size: 12px;">PKR ${parseFloat(saleData.tax_amount || 0).toFixed(2)}</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: left; padding: 1px 2px; font-size: 12px;">Discount:</td>
+                        <td style="text-align: right; padding: 1px 2px; font-size: 12px;">-PKR ${parseFloat(saleData.discount_amount).toFixed(2)}</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: left; padding: 1px 2px; font-size: 14px; font-weight: bold;">Total:</td>
+                        <td style="text-align: right; padding: 1px 2px; font-size: 14px; font-weight: bold;">PKR ${(parseFloat(saleData.total_amount) - parseFloat(saleData.discount_amount)).toFixed(2)}</td>
+                    </tr>
+                </table>
             </div>
             
-            <div class="border-t pt-4 mt-4">
-                <div class="flex justify-between mb-2">
-                    <span>Payment Method:</span>
-                    <span>${saleData.payment_method.toUpperCase()}</span>
-                </div>
-                ${parseFloat(saleData.cash_amount) > 0 ? `<div class="flex justify-between mb-2"><span>Cash:</span><span>PKR ${parseFloat(saleData.cash_amount).toFixed(2)}</span></div>` : ''}
-                ${parseFloat(saleData.card_amount) > 0 ? `<div class="flex justify-between mb-2"><span>Card:</span><span>PKR ${parseFloat(saleData.card_amount).toFixed(2)}</span></div>` : ''}
-                ${(parseFloat(saleData.cash_amount) + parseFloat(saleData.card_amount)) > (parseFloat(saleData.total_amount) - parseFloat(saleData.discount_amount)) ? `<div class="flex justify-between mb-2"><span>Change:</span><span>PKR ${((parseFloat(saleData.cash_amount) + parseFloat(saleData.card_amount)) - (parseFloat(saleData.total_amount) - parseFloat(saleData.discount_amount))).toFixed(2)}</span></div>` : ''}
+            <div class="border-t pt-1 mt-1" style="margin-top: 3px;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                        <td style="text-align: left; padding: 1px 2px; font-size: 12px;">Payment Method:</td>
+                        <td style="text-align: right; padding: 1px 2px; font-size: 12px;">${saleData.payment_method.toUpperCase()}</td>
+                    </tr>
+                    ${parseFloat(saleData.cash_amount) > 0 ? `<tr><td style="text-align: left; padding: 1px 2px; font-size: 12px;">Cash:</td><td style="text-align: right; padding: 1px 2px; font-size: 12px;">PKR ${parseFloat(saleData.cash_amount).toFixed(2)}</td></tr>` : ''}
+                    ${parseFloat(saleData.card_amount) > 0 ? `<tr><td style="text-align: left; padding: 1px 2px; font-size: 12px;">Card:</td><td style="text-align: right; padding: 1px 2px; font-size: 12px;">PKR ${parseFloat(saleData.card_amount).toFixed(2)}</td></tr>` : ''}
+                    <tr><td style="text-align: left; padding: 1px 2px; font-size: 12px;">Change:</td><td style="text-align: right; padding: 1px 2px; font-size: 12px;">PKR ${((parseFloat(saleData.cash_amount) + parseFloat(saleData.card_amount)) - (parseFloat(saleData.total_amount) - parseFloat(saleData.discount_amount))).toFixed(2)}</td></tr>
+                </table>
             </div>
             
-            <div class="text-center mt-8">
-                <p class="text-gray-600">Thank you for your purchase!</p>
+            <div class="text-center mt-1" style="margin-top: 3px;">
+                <p class="text-xs text-gray-600" style="font-size: 12px; margin: 2px 0;">Thank you for your purchase!</p>
             </div>
         </div>
     `;
@@ -461,32 +418,60 @@ function showInvoice(saleData) {
     // Set content for modal (single invoice)
     invoiceContent.innerHTML = invoiceHTML;
     
-    // Set content for print (single invoice with DUPLICATE watermark overlay)
-    const printWrapperHTML = `
-        <div class="print-wrapper">
-            <div class="duplicate-watermark">DUPLICATE</div>
-            ${invoiceHTML}
-        </div>
-    `;
-    printInvoiceContent.innerHTML = printWrapperHTML;
-    
     document.getElementById('invoiceModal').classList.remove('hidden');
 }
 
 // Print invoice
 function printInvoice() {
-    // Hide the modal temporarily
-    document.getElementById('invoiceModal').classList.add('hidden');
+    // Get the invoice content from the modal instead of the hidden div
+    const invoiceContent = document.getElementById('invoiceContent').innerHTML;
     
-    // Show the print content
-    document.getElementById('printInvoice').classList.remove('hidden');
+    // Create a new window with the invoice
+    const printWindow = window.open('', '_blank', 'width=400,height=600,scrollbars=yes,resizable=yes');
     
-    // Print
-    window.print();
+    if (!printWindow) {
+        alert('Popup blocked! Please allow popups for this site and try again.');
+        return;
+    }
     
-    // Hide print content and show modal again
-    document.getElementById('printInvoice').classList.add('hidden');
-    document.getElementById('invoiceModal').classList.remove('hidden');
+    // Create the HTML content as a string to avoid ending tag interpretation issues
+    const printHTML = '<!DOCTYPE html>' +
+        '<html>' +
+        '<head>' +
+        '<title>Invoice</title>' +
+        '<style>' +
+        'body { font-family: Arial, sans-serif; margin: 0; padding: 2mm; font-size: 11px; line-height: 1.2; width: 76mm; overflow-x: hidden; }' +
+        'table { width: 100%; border-collapse: collapse; font-size: 10px; table-layout: fixed; }' +
+        'th, td { padding: 1px; text-align: left; word-wrap: break-word; }' +
+        'th:nth-child(1), td:nth-child(1) { width: 35%; }' +
+        'th:nth-child(2), td:nth-child(2) { width: 15%; text-align: center; }' +
+        'th:nth-child(3), td:nth-child(3) { width: 25%; text-align: right; }' +
+        'th:nth-child(4), td:nth-child(4) { width: 25%; text-align: right; }' +
+        '.text-center { text-align: center; }' +
+        '.text-right { text-align: right; }' +
+        '.border-t { border-top: 1px solid #ccc; }' +
+        '.font-bold { font-weight: bold; }' +
+        '.duplicate-watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg); font-size: 30px; color: rgba(0,0,0,0.08); letter-spacing: 2px; z-index: 0; pointer-events: none; user-select: none; text-transform: uppercase; font-weight: 900; }' +
+        '@media print { body { margin: 0; padding: 2mm; width: 76mm; } @page { margin: 0; size: 80mm auto; } }' +
+        '</style>' +
+        '</head>' +
+        '<body>' +
+        '<div class="print-wrapper" style="position: relative; width: 100%;">' +
+        '<div class="duplicate-watermark">DUPLICATE</div>' +
+        invoiceContent +
+        '</div>' +
+        '<' + 'script' + '>' +
+        'window.onload = function() {' +
+        '    window.print();' +
+        '    window.close();' +
+        '};' +
+        '</' + 'script' + '>' +
+        '</body>' +
+        '</html>';
+    
+    // Write the content to the new window
+    printWindow.document.write(printHTML);
+    printWindow.document.close();
 }
 
 // Close invoice modal

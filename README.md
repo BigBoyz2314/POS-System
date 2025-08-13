@@ -1,6 +1,6 @@
 # POS System - Point of Sale Web Application
 
-A complete web-based Point of Sale (POS) system built with PHP, MySQL, and Tailwind CSS. This system is designed to run on cPanel hosting with PHP 8+ and MySQL.
+A complete web-based Point of Sale (POS) system built with PHP, MySQL, and Tailwind CSS. This system is designed to run on cPanel hosting with PHP 8+ and MySQL, featuring robust concurrency handling, comprehensive tax management, and real-time inventory tracking.
 
 ## Features
 
@@ -22,23 +22,34 @@ A complete web-based Point of Sale (POS) system built with PHP, MySQL, and Tailw
 - Stock tracking with low stock alerts
 - SKU-based product identification
 - Admin-only visibility of cost price (moving average based on recent purchases)
-- Add product supports entering initial cost price; updating product no longer allows changing stock (stock is controlled via sales/purchases)
+- Tax rate management per product
+- Add product supports entering initial cost price and tax rate
+- Updating product no longer allows changing stock (stock is controlled via sales/purchases)
 
 ### 💰 POS Sales System
 - Live product search by name or SKU
 - Products list always visible and scrollable
-- Real-time cart management and totals
+- Real-time cart management with tax calculations
+- **Cart persistence** - Cart survives page refreshes and browser restarts
+- **Concurrency protection** - Real-time stock validation prevents overselling
 - Discount field, mixed payments (cash/card), balance/change calculation
-- Stock validation during checkout
+- **Tax-inclusive pricing** with backward tax calculation
+- Stock validation during checkout with database-level protection
 - Transaction processing with database rollback on errors
 - Cart is preserved on checkout errors (restored automatically)
-- Printable invoice; item rows show numeric amounts (no currency), totals show PKR
+- **Fixed height layout** - Optimized for single-screen operation
+- **Toggle header** - Hide/show navigation for more screen space
+- **Payment modal** - Clean payment interface
+- Printable thermal printer-optimized invoice
+- **Individual item tax display** - Shows tax amount and rate for each item
 
 ### 📈 Reports & Analytics (Admin Only)
 - Daily, weekly, monthly, and custom date range reports
 - Sales statistics and revenue tracking
-- Detailed sales history with “View Invoice”
-- Printable invoice with a subtle “DUPLICATE” watermark overlay (print-only)
+- Detailed sales history with "View Invoice"
+- Printable invoice with a subtle "DUPLICATE" watermark overlay (print-only)
+- **Individual item tax breakdown** in invoice display
+- **Always show change amount** - Even when zero for complete transparency
 - Items sold analytics
 
 ### 🧾 Vendors (Admin Only)
@@ -51,17 +62,27 @@ A complete web-based Point of Sale (POS) system built with PHP, MySQL, and Tailw
 - Safe database transactions for atomic updates
 - View/delete purchases, view purchase details
 
+### 🔄 Concurrency & Real-time Features
+- **Multi-user support** - Multiple users can process sales simultaneously
+- **Real-time stock validation** - Prevents overselling with database-level checks
+- **Automatic stock refresh** - Cart updates with fresh stock data every 30 seconds
+- **Session isolation** - Each user's data is completely separate
+- **Transaction safety** - Database transactions ensure data integrity
+
 ## Tech Stack
 
 - **Frontend**: HTML5, Tailwind CSS, Vanilla JavaScript, jQuery (for AJAX)
 - **Backend**: PHP 8+ (Procedural style)
-- **Database**: MySQL
+- **Database**: MySQL with transaction support
 - **Hosting**: Compatible with cPanel hosting
 
-## Currency
+## Currency & Tax System
 
-- All prices display in PKR.
-- Invoice item rows show numeric values only; currency prefixes are used in totals and payment sections.
+- All prices display in PKR
+- **Tax-inclusive pricing** - Product prices include tax
+- **Backward calculation** - Tax calculated from inclusive prices
+- **Individual item tax display** - Shows tax amount and percentage for each item
+- Invoice item rows show numeric values only; currency prefixes used in totals and payment sections
 
 ## Installation
 
@@ -93,6 +114,8 @@ $database = 'your_database_name';
 ├── logout.php
 ├── database.sql
 ├── README.md
+├── .gitignore
+├── .cpanel.yml
 ├── includes/
 │   ├── auth.php
 │   ├── db.php
@@ -105,6 +128,7 @@ $database = 'your_database_name';
     ├── vendors.php
     ├── purchases.php
     ├── ajax_search_products.php
+    ├── ajax_get_stock.php
     ├── get_sale_details.php
     └── get_purchase_details.php
 ```
@@ -130,15 +154,15 @@ $database = 'your_database_name';
 
 ### For Administrators
 1. **Dashboard**: View system overview and statistics
-2. **Products**: Manage product inventory, add/edit/delete products
-3. **POS Sales**: Process customer transactions
+2. **Products**: Manage product inventory, add/edit/delete products, set tax rates
+3. **POS Sales**: Process customer transactions with real-time stock validation
 4. **Reports**: Generate sales reports and analytics; print invoices with duplicate watermark
 5. **Vendors**: Manage vendors
 6. **Purchases**: Record purchases that increase stock and update cost prices
 
 ### For Cashiers
 1. **Dashboard**: View basic statistics
-2. **POS Sales**: Process customer transactions
+2. **POS Sales**: Process customer transactions with cart persistence
 3. **Limited Access**: Cannot access product management or reports
 
 ## Security Features
@@ -149,6 +173,7 @@ $database = 'your_database_name';
 - **CSRF Protection**: Form submissions include CSRF tokens
 - **Session Security**: Secure session handling with proper validation
 - **Access Control**: Role-based access control for different user types
+- **Concurrency Safety**: Database-level protection against race conditions
 
 ## File Structure
 
@@ -159,6 +184,8 @@ $database = 'your_database_name';
 ├── logout.php             # Logout handler
 ├── database.sql           # Database schema and sample data
 ├── README.md              # This file
+├── .gitignore             # Git ignore file
+├── .cpanel.yml            # cPanel deployment configuration
 ├── includes/              # Core includes
 │   ├── auth.php          # Authentication functions
 │   ├── db.php            # Database connection
@@ -171,6 +198,7 @@ $database = 'your_database_name';
     ├── vendors.php       # Vendors management
     ├── purchases.php     # Purchases management
     ├── ajax_search_products.php # AJAX product search
+    ├── ajax_get_stock.php       # AJAX stock refresh for concurrency
     ├── get_sale_details.php     # AJAX sale details for invoice
     └── get_purchase_details.php # AJAX purchase details
 ```
@@ -180,23 +208,48 @@ $database = 'your_database_name';
 ### Tables
 - **users**: User accounts and authentication
 - **categories**: Product categories
-- **products**: Product inventory (fields include `cost_price`)
+- **products**: Product inventory (fields include `cost_price`, `tax_rate`)
 - **vendors**: Supplier details
 - **purchases**: Purchase headers (with vendor, date, totals)
 - **purchase_items**: Items for each purchase (updates stock and influences moving average cost)
-- **sales**: Sales transactions (with discount and payment breakdown)
-- **sale_items**: Individual items in each sale
-- **customers**: Customer information (for future use)
+- **sales**: Sales transactions (with discount, tax, and payment breakdown)
+- **sale_items**: Individual items in each sale (with tax rate and tax amount)
 
 ### Cost Price / Moving Average
 - The system stores a `cost_price` on the product and shows an admin-only cost column based on a moving average of recent purchase item prices.
-- Purchases increase stock and update the product’s cost basis.
+- Purchases increase stock and update the product's cost basis.
+
+### Tax System
+- **Tax-inclusive pricing**: Product prices include tax
+- **Backward calculation**: Tax calculated from inclusive prices
+- **Individual item tax**: Each item shows its tax amount and rate
+- **Database storage**: Tax rates and amounts stored per item
 
 ### Key Features
 - Foreign key relationships for data integrity
 - Proper indexing for performance
 - Transaction-safe stock updates via purchases/sales
 - Stock managed exclusively via purchases (in) and sales (out)
+- Concurrency protection with conditional stock updates
+
+## Concurrency & Multi-User Features
+
+### Real-time Stock Management
+- **Automatic stock refresh**: Cart updates every 30 seconds
+- **Database-level protection**: Conditional UPDATE prevents overselling
+- **Stock validation**: Real-time checks before adding to cart
+- **Automatic adjustments**: Quantities adjusted if stock becomes insufficient
+
+### Session Management
+- **User isolation**: Each user's session is completely separate
+- **Unique sale identifiers**: Prevents session data conflicts
+- **Cart persistence**: Survives page refreshes and browser restarts
+- **Error recovery**: Cart restored automatically on checkout errors
+
+### Transaction Safety
+- **Database transactions**: Atomic operations prevent partial sales
+- **Rollback on errors**: Failed sales don't affect inventory
+- **Stock verification**: Affected rows check ensures stock updates
 
 ## Customization
 
@@ -236,7 +289,12 @@ The system uses Tailwind CSS for styling. You can customize the appearance by:
    - Check PHP execution permissions
 
 5. **Invoice Prints Across Multiple Pages**
-   - The app includes print CSS to keep invoices on a single page. If you still see extra pages, ensure your browser print scaling is set to “Fit to page” and margins are set to “Default” or “None”.
+   - The app includes print CSS to keep invoices on a single page. If you still see extra pages, ensure your browser print scaling is set to "Fit to page" and margins are set to "Default" or "None".
+
+6. **Concurrency Issues**
+   - Ensure database supports transactions
+   - Check that stock updates are working properly
+   - Verify AJAX endpoints are accessible
 
 ### Performance Optimization
 
@@ -263,6 +321,15 @@ For issues or questions:
 This project is provided as-is for educational and commercial use. Feel free to modify and distribute according to your needs.
 
 ## Changelog
+
+### Version 1.2.0
+- **Concurrency protection** - Multi-user support with real-time stock validation
+- **Cart persistence** - Cart survives page refreshes and browser restarts
+- **Tax system** - Tax-inclusive pricing with individual item tax display
+- **Enhanced UI** - Fixed height layout, toggle header, payment modal
+- **Real-time features** - Automatic stock refresh, session isolation
+- **Invoice improvements** - Thermal printer optimization, tax breakdown
+- **Error handling** - Better message display, cart preservation on errors
 
 ### Version 1.1.0
 - Added Vendors and Purchases modules (with transactional stock updates)

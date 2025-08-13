@@ -18,14 +18,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $sku = trim($_POST['sku']);
                 $price = floatval($_POST['price']);
                 $cost_price = floatval($_POST['cost_price']);
+                $tax_rate = floatval($_POST['tax_rate']);
                 $stock = intval($_POST['stock']);
                 $category_id = intval($_POST['category_id']);
                 
                 if (empty($name) || empty($sku) || $price <= 0) {
                     $error = 'Please fill all required fields correctly.';
                 } else {
-                    $stmt = mysqli_prepare($conn, "INSERT INTO products (name, sku, price, cost_price, stock, category_id) VALUES (?, ?, ?, ?, ?, ?)");
-                    mysqli_stmt_bind_param($stmt, "ssddii", $name, $sku, $price, $cost_price, $stock, $category_id);
+                    $stmt = mysqli_prepare($conn, "INSERT INTO products (name, sku, price, cost_price, tax_rate, stock, category_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                    mysqli_stmt_bind_param($stmt, "ssddddii", $name, $sku, $price, $cost_price, $tax_rate, $stock, $category_id);
                     
                     if (mysqli_stmt_execute($stmt)) {
                         $message = 'Product added successfully.';
@@ -40,13 +41,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $name = trim($_POST['name']);
                 $sku = trim($_POST['sku']);
                 $price = floatval($_POST['price']);
+                $tax_rate = floatval($_POST['tax_rate']);
                 $category_id = intval($_POST['category_id']);
                 
                 if (empty($name) || empty($sku) || $price <= 0) {
                     $error = 'Please fill all required fields correctly.';
                 } else {
-                    $stmt = mysqli_prepare($conn, "UPDATE products SET name = ?, sku = ?, price = ?, category_id = ? WHERE id = ?");
-                    mysqli_stmt_bind_param($stmt, "ssdii", $name, $sku, $price, $category_id, $id);
+                    $stmt = mysqli_prepare($conn, "UPDATE products SET name = ?, sku = ?, price = ?, tax_rate = ?, category_id = ? WHERE id = ?");
+                    mysqli_stmt_bind_param($stmt, "ssddii", $name, $sku, $price, $tax_rate, $category_id, $id);
                     
                     if (mysqli_stmt_execute($stmt)) {
                         $message = 'Product updated successfully.';
@@ -122,6 +124,7 @@ include '../includes/header.php';
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tax Rate</th>
                         <?php if (isAdmin()): ?>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cost Price</th>
                         <?php endif; ?>
@@ -143,6 +146,9 @@ include '../includes/header.php';
                         </td>
                                                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             PKR <?php echo number_format($product['price'], 2); ?>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <?php echo number_format($product['tax_rate'], 2); ?>%
                         </td>
                         <?php if (isAdmin()): ?>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -202,6 +208,10 @@ include '../includes/header.php';
                     <input type="number" name="cost_price" step="0.01" value="0.00" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
                 </div>
                 <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Tax Rate (%)</label>
+                    <input type="number" name="tax_rate" step="0.01" value="0.00" min="0" max="100" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                </div>
+                <div class="mb-4">
                     <label class="block text-gray-700 text-sm font-bold mb-2">Stock</label>
                     <input type="number" name="stock" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
                 </div>
@@ -243,6 +253,10 @@ include '../includes/header.php';
                 <div class="mb-4">
                     <label class="block text-gray-700 text-sm font-bold mb-2">Price</label>
                     <input type="number" name="price" id="edit_price" step="0.01" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Tax Rate (%)</label>
+                    <input type="number" name="tax_rate" id="edit_tax_rate" step="0.01" value="0.00" min="0" max="100" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
                 </div>
                 <div class="flex justify-end">
                     <button type="button" onclick="hideEditModal()" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded mr-2">Cancel</button>

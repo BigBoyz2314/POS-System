@@ -6,8 +6,23 @@ require_once '../includes/db.php';
 // Require login
 requireLogin();
 
+// Debug: Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+    echo "<p class='text-red-600 text-center p-4'>User not logged in</p>";
+    exit;
+}
+
+// Debug: Check if we can connect to database
+if (!$conn) {
+    echo "<p class='text-red-600 text-center p-4'>Database connection failed</p>";
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['query'])) {
     $query = trim($_POST['query']);
+    
+    // Debug: Log the request
+    error_log("AJAX request received: query = '$query'");
     
     if (strlen($query) >= 2) {
         // Search for specific products
@@ -26,21 +41,39 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['query'])) {
                                       ORDER BY p.name LIMIT 50");
         mysqli_stmt_execute($stmt);
         $result = mysqli_stmt_get_result($stmt);
+        
+        // Debug: Check if query executed successfully
+        if (!$result) {
+            echo "<p class='text-red-600 text-center p-4'>Query failed: " . mysqli_error($conn) . "</p>";
+            exit;
+        }
     }
     
-    if (mysqli_num_rows($result) > 0) {
+    $num_rows = mysqli_num_rows($result);
+    if ($num_rows > 0) {
+        // Debug: Log the number of products
+        error_log("Found $num_rows products to display");
+        
         while ($product = mysqli_fetch_assoc($result)) {
             $stock_class = $product['stock'] < 10 ? 'text-red-600' : 'text-green-600';
             echo "
-            <div class='p-3 border rounded hover:bg-gray-50 cursor-pointer' onclick='addToCart(" . json_encode($product) . ")'>
+            <div class='p-2 border rounded hover:bg-gray-50 cursor-pointer' onclick='addToCart(" . json_encode($product) . ")'>
                 <div class='flex justify-between items-center'>
-                    <div>
-                        <h3 class='font-medium text-gray-900'>" . htmlspecialchars($product['name']) . "</h3>
-                        <p class='text-sm text-gray-500'>SKU: " . htmlspecialchars($product['sku']) . " | " . htmlspecialchars($product['category_name']) . "</p>
+                    <div class='flex-1 min-w-0'>
+                        <div class='flex items-center space-x-1'>
+                            <h3 class='font-medium text-gray-900 text-sm truncate'>" . htmlspecialchars($product['name']) . "</h3>
+                            <span class='text-xs text-gray-400'>|</span>
+                            <span class='text-xs text-gray-500'>" . htmlspecialchars($product['sku']) . "</span>
+                            <span class='text-xs text-gray-400'>|</span>
+                            <span class='text-xs text-gray-500'>" . htmlspecialchars($product['category_name']) . "</span>
+                        </div>
                     </div>
-                    <div class='text-right'>
-                        <p class='font-semibold text-gray-900'>PKR " . number_format($product['price'], 2) . "</p>
-                        <p class='text-sm $stock_class'>Stock: " . $product['stock'] . "</p>
+                    <div class='text-right flex-shrink-0 ml-2'>
+                        <div class='flex items-center space-x-2'>
+                            <p class='font-semibold text-gray-900 text-sm'>PKR " . number_format($product['price'], 2) . "</p>
+                            <span class='text-xs text-gray-500'>inc. tax</span>
+                            <span class='text-xs $stock_class'>(" . $product['stock'] . ")</span>
+                        </div>
                     </div>
                 </div>
             </div>";
