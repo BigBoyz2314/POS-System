@@ -1,0 +1,17 @@
+{
+  "name": "pos-system",
+  "version": "1.0.0",
+  "description": "A complete web-based Point of Sale (POS) system built with PHP, MySQL, and Tailwind CSS. This system is designed to run on cPanel hosting with PHP 8+ and MySQL, featuring robust concurrency handling, comprehensive tax management, and real-time inventory tracking.",
+  "main": "postcss.config.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17"
+  }
+}

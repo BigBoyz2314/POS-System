@@ -166,12 +166,7 @@ include '../includes/header.php';
 ?>
 
 <div class="h-screen flex flex-col overflow-hidden">
-    <!-- Toggle Header Button - Always Visible -->
-    <div class="flex-shrink-0 p-2 bg-gray-100 border-b">
-        <button id="toggleHeaderBtn" class="bg-gray-500 hover:bg-gray-700 text-white px-3 py-1 rounded text-sm">
-            Hide Header
-        </button>
-    </div>
+
 
     <!-- Header with messages -->
     <div id="headerSection" class="flex-shrink-0 p-3">
@@ -189,15 +184,20 @@ include '../includes/header.php';
     </div>
 
     <!-- Main content area -->
-    <div class="flex-1 px-3 pb-3 min-h-0">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+    <div class="flex-1 px-2 sm:px-3 py-2 sm:py-3 min-h-0">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-10 gap-3 sm:gap-6 h-full">
         <!-- Product Search and Selection -->
-        <div class="bg-white rounded-lg shadow-md p-4 flex flex-col min-h-0">
-            <h2 class="text-xl font-semibold text-gray-900 mb-4">Product Search</h2>
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 sm:p-4 flex flex-col min-h-0 md:col-span-1 lg:col-span-5">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">
+                <i class="fas fa-search mr-2"></i>Product Search
+            </h2>
             
-            <div class="mb-4">
-                <input type="text" id="searchInput" placeholder="Search by product name or SKU..." 
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <div class="mb-3 sm:mb-4">
+                <div class="relative">
+                    <i class="fas fa-search absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    <input type="text" id="searchInput" placeholder="Search by product name or SKU..." 
+                           class="w-full pl-8 sm:pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
             </div>
             
             <div id="searchResults" class="overflow-y-auto border border-gray-200 rounded-md p-2 flex-1">
@@ -206,58 +206,58 @@ include '../includes/header.php';
         </div>
 
         <!-- Shopping Cart -->
-        <div class="bg-white rounded-lg shadow-md p-4 flex flex-col min-h-0">
-            <h2 class="text-xl font-semibold text-gray-900 mb-4">Shopping Cart</h2>
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 sm:p-4 flex flex-col min-h-0 md:col-span-1 lg:col-span-5 relative">
+            <!-- Toggle Header Button - Floating on cart -->
+            <div class="absolute top-2 right-2 flex items-center gap-2 z-10">
+                <button id="controlsBtn" class="bg-gray-500 hover:bg-gray-700 dark:bg-gray-600 dark:hover:bg-gray-500 text-white p-2 rounded text-sm" title="Show Controls" onclick="openControlsModal()">
+                    <i class="fas fa-keyboard"></i>
+                </button>
+                <button id="toggleHeaderBtn" class="bg-gray-500 hover:bg-gray-700 dark:bg-gray-600 dark:hover:bg-gray-500 text-white p-2 rounded text-sm">
+                    <i class="fas fa-eye-slash"></i>
+                </button>
+            </div>
+            <h2 class="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">
+                <i class="fas fa-shopping-basket mr-2"></i>Shopping Cart
+            </h2>
             
-            <div id="cartItems" class="overflow-y-auto mb-4 flex-1">
+            <div id="cartItems" class="overflow-y-auto overflow-x-hidden mb-4 flex-1 min-w-0 max-h-[50vh] md:max-h-[60vh] lg:max-h-none">
                 <!-- Cart items will be populated here -->
             </div>
             
-            <!-- Cart Totals -->
-            <div class="border-t pt-4 mb-4 flex-shrink-0">
-                <div class="flex justify-between items-center mb-2">
-                    <span class="text-sm font-medium text-gray-700">Subtotal:</span>
-                    <span id="cartTotal" class="text-sm font-medium text-gray-900">PKR 0.00</span>
-                </div>
-                <div class="flex justify-between items-center mb-2">
-                    <span class="text-sm font-medium text-gray-700">Tax:</span>
-                    <span id="cartTax" class="text-sm font-medium text-red-600">PKR 0.00</span>
-                </div>
-                <div class="flex justify-between items-center border-t pt-2">
-                    <span class="text-lg font-semibold text-gray-900">Cart Total:</span>
-                    <span id="cartTotalWithTax" class="text-xl font-bold text-gray-900">PKR 0.00</span>
-                </div>
-            </div>
-            
-            <div class="border-t pt-4 flex-shrink-0">
-                <!-- Discount Section -->
-                <div class="mb-3">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Discount (PKR)</label>
-                    <input type="number" id="discountInput" step="0.01" min="0" value="0" 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                           onchange="updateFinalTotal()">
-                </div>
-                
+            <div class="border-t pt-2 flex-shrink-0">
                 <!-- Final Total -->
-                <div class="flex justify-between items-center mb-3">
-                    <span class="text-lg font-semibold text-gray-900">Final Total:</span>
-                    <span id="finalTotal" class="text-2xl font-bold text-blue-600">PKR 0.00</span>
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-base font-semibold text-gray-900">Final Total:</span>
+                    <span id="finalTotal" class="text-lg sm:text-xl font-bold text-blue-600">PKR 0.00</span>
                 </div>
-                
+                <div class="flex flex-wrap items-center gap-2 mb-2 min-w-0">
+                    <button id="parkCartBtn" onclick="openParkNoteModal()" disabled class="shrink-0 whitespace-nowrap bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-400 disabled:hover:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded text-base">
+                        <i class="fas fa-inbox mr-2"></i>Park Sale
+                    </button>
+                    <button id="resumeCartBtn" onclick="openParkedModal()" class="shrink-0 whitespace-nowrap bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-4 rounded text-base">
+                        <i class="fas fa-folder-open mr-2"></i>Resume
+                    </button>
+                    <button id="clearCartBtn" onclick="clearCart()" class="shrink-0 whitespace-nowrap bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-4 rounded text-base">
+                        <i class="fas fa-trash mr-2"></i>Clear Cart
+                    </button>
+                    
                 <button onclick="showPaymentModal()" id="checkoutBtn" disabled
-                        class="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-bold py-2 px-4 rounded">
-                    Proceed to Payment
+                        class="flex-1 min-w-0 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-bold py-3 px-4 rounded text-base">
+                    <i class="fas fa-credit-card mr-2"></i>Proceed to Payment
                 </button>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <!-- Payment Modal -->
-<div id="paymentModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
-    <div class="relative top-10 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+<div id="paymentModal" class="fixed inset-0 bg-gray-900/60 overflow-y-auto h-full w-full hidden modal-overlay" onclick="if(event.target===this) hidePaymentModal()">
+    <div class="relative top-10 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 dark:text-gray-100 modal-panel" onclick="event.stopPropagation()">
         <div class="mt-3">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">Payment Details</h3>
+            <h3 class="text-lg font-medium text-gray-900 mb-4">
+                <i class="fas fa-money-bill-wave mr-2"></i>Payment Details
+            </h3>
             
             <!-- Payment Method -->
             <div class="mb-4">
@@ -286,6 +286,17 @@ include '../includes/header.php';
             </div>
             
             <!-- Balance/Change -->
+            <!-- Discount -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-percentage mr-1"></i>Discount (PKR)
+                </label>
+                <input type="number" id="discountInput" step="0.01" min="0" value="0" 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       onchange="updateFinalTotal(); calculateBalance();">
+            </div>
+            
+            <!-- Balance/Change -->
             <div class="mb-6">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Balance/Change</label>
                 <input type="text" id="balanceAmount" readonly 
@@ -295,30 +306,78 @@ include '../includes/header.php';
             <div class="flex justify-end space-x-4">
                 <button onclick="hidePaymentModal()" 
                         class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
-                    Cancel
+                    <i class="fas fa-times mr-2"></i>Cancel
                 </button>
                 <button id="completeSaleBtn" 
                         class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-                    Complete Sale
+                    <i class="fas fa-check mr-2"></i>Complete Sale
                 </button>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Controls Modal (Sales) -->
+<div id="controlsModal" class="fixed inset-0 bg-gray-900/60 overflow-y-auto h-full w-full hidden modal-overlay" onclick="if(event.target===this) closeControlsModal()">
+  <div class="relative top-10 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 dark:text-gray-100 modal-panel" onclick="event.stopPropagation()">
+    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-3"><i class="fas fa-keyboard mr-2"></i>Sales Controls</h3>
+    <div class="text-sm grid grid-cols-1 gap-2">
+      <div><span class="font-semibold">F2 / Ctrl+F</span> – Focus Search</div>
+      <div><span class="font-semibold">Alt+P</span> – Proceed to Payment</div>
+      <div><span class="font-semibold">Alt+K</span> – Park Sale</div>
+      <div><span class="font-semibold">Alt+R</span> – Open Resume</div>
+      <div><span class="font-semibold">Alt+C</span> – Clear Cart</div>
+      <div><span class="font-semibold">+</span> – Increase last item qty</div>
+      <div><span class="font-semibold">-</span> – Decrease last item qty</div>
+      <div><span class="font-semibold">Delete</span> – Remove last item</div>
+    </div>
+    <div class="flex justify-end mt-4">
+      <button class="bg-gray-500 hover:bg-gray-700 text-white py-2 px-4 rounded" onclick="closeControlsModal()"><i class="fas fa-times mr-1"></i>Close</button>
+    </div>
+  </div>
+</div>
+<!-- Park Note Modal -->
+<div id="parkNoteModal" class="fixed inset-0 bg-gray-900/60 overflow-y-auto h-full w-full hidden modal-overlay" onclick="if(event.target===this) closeParkNoteModal()">
+  <div class="relative top-10 mx-auto p-5 border w-full max-w-sm shadow-lg rounded-md bg-white dark:bg-gray-800 dark:text-gray-100 modal-panel" onclick="event.stopPropagation()">
+    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-3"><i class="fas fa-sticky-note mr-2"></i>Park Sale Note</h3>
+    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Note (required)</label>
+    <input id="parkNoteInput" type="text" required placeholder="Customer name or reference" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4">
+    <div class="flex justify-end gap-2">
+      <button class="bg-gray-500 hover:bg-gray-700 text-white py-2 px-4 rounded" onclick="closeParkNoteModal()"><i class="fas fa-times mr-1"></i>Cancel</button>
+      <button class="bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded" onclick="submitParkNote()"><i class="fas fa-inbox mr-1"></i>Park</button>
+    </div>
+  </div>
+</div>
+
+<!-- Parked Sales Modal -->
+<div id="parkedModal" class="fixed inset-0 bg-gray-900/60 overflow-y-auto h-full w-full hidden modal-overlay" onclick="if(event.target===this) closeParkedModal()">
+  <div class="relative top-10 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 dark:text-gray-100 modal-panel" onclick="event.stopPropagation()">
+    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-3"><i class="fas fa-folder-tree mr-2"></i>Parked Sales</h3>
+    <div class="mb-3">
+      <input id="parkedSearch" type="text" placeholder="Search notes or IDs..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+    </div>
+    <div id="parkedList" class="border border-gray-200 dark:border-gray-700 rounded p-2 max-h-80 overflow-y-auto text-sm">
+      <div class="text-gray-500 dark:text-gray-400">Loading...</div>
+    </div>
+    <div class="flex justify-end space-x-2 mt-4">
+      <button onclick="closeParkedModal()" class="bg-gray-500 hover:bg-gray-700 text-white py-2 px-4 rounded"><i class="fas fa-times mr-1"></i>Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- Invoice Modal -->
-<div id="invoiceModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
-    <div class="relative top-5 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+<div id="invoiceModal" class="fixed inset-0 bg-gray-900/60 overflow-y-auto h-full w-full hidden modal-overlay" onclick="if(event.target===this) closeInvoice()">
+    <div class="relative top-5 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white dark:bg-gray-800 dark:text-gray-100 modal-panel" onclick="event.stopPropagation()">
         <div class="mt-3">
             <div id="invoiceContent" class="text-center">
                 <!-- Invoice content will be populated here -->
             </div>
             <div class="flex justify-center space-x-4 mt-6">
                 <button onclick="printInvoice()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                    Print Invoice
+                    <i class="fas fa-print mr-2"></i>Print Invoice
                 </button>
                 <button onclick="closeInvoice()" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
-                    Close
+                    <i class="fas fa-times mr-2"></i>Close
                 </button>
             </div>
         </div>
@@ -359,6 +418,139 @@ function clearCartFromStorage() {
     localStorage.removeItem('pos_cart');
 }
 
+// Clear cart action
+function clearCart() {
+    if (!cart.length) return;
+    if (!confirm('Clear all items from the cart?')) return;
+    cart = [];
+    clearCartFromStorage();
+    updateCartDisplay();
+    // Reset totals and disable checkout
+    const checkoutBtn = document.getElementById('checkoutBtn');
+    if (checkoutBtn) checkoutBtn.disabled = true;
+    document.getElementById('finalTotal').textContent = 'PKR 0.00';
+}
+
+function isTypingInForm() {
+    const ae = document.activeElement;
+    if (!ae) return false;
+    const tag = ae.tagName ? ae.tagName.toLowerCase() : '';
+    return tag === 'input' || tag === 'textarea' || tag === 'select' || ae.isContentEditable;
+}
+
+function adjustLastCartQuantity(delta) {
+    if (!cart.length) return;
+    const index = cart.length - 1;
+    updateQuantity(index, delta);
+}
+
+// Park current cart to backend
+async function parkCurrentCart(fromModal) {
+    if (!cart.length) { alert('Cart is empty.'); return; }
+    try {
+        const noteEl = document.getElementById('parkNoteInput');
+        const note = noteEl ? noteEl.value.trim() : '';
+        if (!note) { alert('Note is required.'); return; }
+        const resp = await fetch('ajax_park_sale.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `cart=${encodeURIComponent(JSON.stringify(cart))}&note=${encodeURIComponent(note)}`
+        });
+        const data = await resp.json();
+        if (!data.success) throw new Error(data.message || 'Failed to park cart');
+        // Clear current cart
+        clearCart();
+        if (fromModal) { await loadParkedList(); }
+        closeParkNoteModal();
+        if (window.UIKit) UIKit.success('Sale parked successfully');
+    } catch (e) {
+        if (window.UIKit) UIKit.error(e.message || 'Error parking sale');
+    }
+}
+
+function openParkedModal() {
+    document.getElementById('parkedModal').classList.remove('hidden');
+    loadParkedList();
+}
+function closeParkedModal() {
+    document.getElementById('parkedModal').classList.add('hidden');
+}
+
+function openParkNoteModal() {
+    document.getElementById('parkNoteModal').classList.remove('hidden');
+    const input = document.getElementById('parkNoteInput');
+    if (input) { input.value = ''; setTimeout(()=>input.focus(), 50); }
+}
+function closeParkNoteModal() {
+    document.getElementById('parkNoteModal').classList.add('hidden');
+}
+function submitParkNote() { parkCurrentCart(false); }
+
+async function loadParkedList() {
+    const list = document.getElementById('parkedList');
+    list.innerHTML = '<div class="text-gray-500 dark:text-gray-400">Loading...</div>';
+    try {
+        const resp = await fetch('ajax_list_parked.php');
+        const data = await resp.json();
+        if (!data.success) throw new Error(data.message || 'Failed to load');
+        const rows = data.data || [];
+        if (!rows.length) { list.innerHTML = '<div class="text-gray-500 dark:text-gray-400">No parked sales</div>'; return; }
+        const render = (arr) => arr.map(r => `
+            <div class="flex items-center justify-between border-b last:border-b-0 border-gray-200 dark:border-gray-700 py-2">
+                <div class="min-w-0">
+                    <div class="font-medium text-gray-900 dark:text-gray-100">#${r.id} ${r.note ? ' - ' + r.note : ''}</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">${r.created_at}</div>
+                </div>
+                <div class="shrink-0 flex items-center gap-2">
+                    <button class="bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-1 rounded text-xs" onclick="resumeParked(${r.id})"><i class='fas fa-folder-open mr-1'></i>Resume</button>
+                    <button class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs" onclick="deleteParked(${r.id})"><i class='fas fa-trash mr-1'></i>Delete</button>
+                </div>
+            </div>
+        `).join('');
+        list.innerHTML = render(rows);
+        const search = document.getElementById('parkedSearch');
+        if (search) {
+            search.oninput = function(){
+                const q = this.value.toLowerCase();
+                const filtered = rows.filter(r => (String(r.id).includes(q) || (r.note||'').toLowerCase().includes(q)));
+                list.innerHTML = filtered.length ? render(filtered) : '<div class="text-gray-500 dark:text-gray-400">No results</div>';
+            };
+        }
+    } catch (e) {
+        list.innerHTML = '<div class="text-red-600">'+ (e.message || 'Error') +'</div>';
+    }
+}
+
+async function resumeParked(id) {
+    try {
+        const resp = await fetch('ajax_get_parked.php?id=' + encodeURIComponent(id) + '&remove=1');
+        const data = await resp.json();
+        if (!data.success) throw new Error(data.message || 'Failed to load');
+        const loaded = JSON.parse(data.cart || '[]');
+        if (!Array.isArray(loaded)) throw new Error('Invalid cart data');
+        cart = loaded;
+        saveCartToStorage();
+        updateCartDisplay();
+        closeParkedModal();
+        if (window.UIKit) UIKit.success('Cart resumed');
+    } catch (e) {
+        if (window.UIKit) UIKit.error(e.message || 'Error resuming');
+    }
+}
+
+async function deleteParked(id) {
+    try {
+        // reuse get endpoint with remove after fetch = true but not return cart
+        const resp = await fetch('ajax_get_parked.php?id=' + encodeURIComponent(id) + '&remove=1');
+        const data = await resp.json();
+        if (!data.success) throw new Error(data.message || 'Failed to delete');
+        await loadParkedList();
+        if (window.UIKit) UIKit.success('Deleted');
+    } catch (e) {
+        if (window.UIKit) UIKit.error(e.message || 'Error deleting');
+    }
+}
+
 // Toggle header visibility - Define this first since it's called by the button
 function toggleHeader() {
     const headerSection = document.getElementById('headerSection');
@@ -369,25 +561,37 @@ function toggleHeader() {
         // Show header
         headerSection.classList.remove('hidden');
         navHeader.classList.remove('hidden');
-        toggleBtn.textContent = 'Hide Header';
+        toggleBtn.innerHTML = '<i class="fas fa-eye-slash"></i>';
         headerHidden = false;
         localStorage.setItem('headerHidden', 'false');
     } else {
         // Hide header
         headerSection.classList.add('hidden');
         navHeader.classList.add('hidden');
-        toggleBtn.textContent = 'Show Header';
+        toggleBtn.innerHTML = '<i class="fas fa-eye"></i>';
         headerHidden = true;
         localStorage.setItem('headerHidden', 'true');
     }
 }
+
+function openControlsModal(){ document.getElementById('controlsModal').classList.remove('hidden'); }
+function closeControlsModal(){ document.getElementById('controlsModal').classList.add('hidden'); }
 
 // Load header state from localStorage
 function loadHeaderState() {
     const savedState = localStorage.getItem('headerHidden');
     if (savedState === 'true') {
         headerHidden = true;
-        toggleHeader(); // Apply the saved state
+        // Apply the saved state directly
+        const headerSection = document.getElementById('headerSection');
+        const navHeader = document.querySelector('nav');
+        const toggleBtn = document.getElementById('toggleHeaderBtn');
+        
+        if (headerSection && navHeader && toggleBtn) {
+            headerSection.classList.add('hidden');
+            navHeader.classList.add('hidden');
+            toggleBtn.innerHTML = '<i class="fas fa-eye"></i>';
+        }
     }
 }
 
@@ -420,10 +624,12 @@ function loadAllProducts() {
 // Add product to cart
 function addToCart(product) {
     const existingItem = cart.find(item => item.id === product.id);
+    let addedItemIndex = -1;
     
     if (existingItem) {
         if (existingItem.quantity < product.stock) {
             existingItem.quantity++;
+            addedItemIndex = cart.indexOf(existingItem);
         } else {
             alert('Cannot add more items. Stock limit reached.');
             return;
@@ -438,6 +644,7 @@ function addToCart(product) {
                 quantity: 1,
                 stock: product.stock
             });
+            addedItemIndex = cart.length - 1;
         } else {
             alert('Product is out of stock.');
             return;
@@ -446,7 +653,37 @@ function addToCart(product) {
     
     updateCartDisplay();
     saveCartToStorage();
+    
+    // Scroll to the added item
+    if (addedItemIndex >= 0) {
+        setTimeout(() => {
+            scrollToCartItem(addedItemIndex);
+        }, 100);
+    }
+    
     // Don't clear the search input or results - keep products visible
+}
+
+// Scroll to specific cart item
+function scrollToCartItem(itemIndex) {
+    const cartContainer = document.getElementById('cartItems');
+    const tableRows = cartContainer.querySelectorAll('tbody tr');
+    
+    if (tableRows[itemIndex]) {
+        // Add highlight effect (light and dark friendly)
+        tableRows[itemIndex].classList.add('bg-yellow-100', 'dark:bg-amber-800/40', 'border-yellow-400', 'dark:border-amber-500');
+        
+        // Scroll to the item
+        tableRows[itemIndex].scrollIntoView({
+            behavior: 'smooth',
+            block: 'nearest'
+        });
+        
+        // Remove highlight after 2 seconds
+        setTimeout(() => {
+            tableRows[itemIndex].classList.remove('bg-yellow-100', 'dark:bg-amber-800/40', 'border-yellow-400', 'dark:border-amber-500');
+        }, 2000);
+    }
 }
 
 // Refresh product stock data periodically to handle concurrent sales
@@ -498,21 +735,57 @@ function updateQuantity(index, change) {
 // Update cart display
 function updateCartDisplay() {
     const cartContainer = document.getElementById('cartItems');
-    const totalElement = document.getElementById('cartTotal');
     const checkoutBtn = document.getElementById('checkoutBtn');
+    let cartHTML = '';
     
     if (cart.length === 0) {
-        cartContainer.innerHTML = '<p class="text-gray-500 text-center">Cart is empty</p>';
-        totalElement.textContent = 'PKR 0.00';
-        document.getElementById('cartTax').textContent = 'PKR 0.00';
-        document.getElementById('cartTotalWithTax').textContent = 'PKR 0.00';
+        cartHTML = `
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50 dark:bg-gray-900">
+                    <tr class="border-b border-gray-200 dark:border-gray-700">
+                        <th class="text-left py-1 px-2 font-medium text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700">Sr.</th>
+                        <th class="text-left py-1 px-2 font-medium text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700">Item Name</th>
+                        <th class="text-left py-1 px-2 font-medium text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700">Desc</th>
+                        <th class="text-center py-1 px-2 font-medium text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700">Qty</th>
+                        <th class="text-right py-1 px-2 font-medium text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700">Price</th>
+                        <th class="text-right py-1 px-2 font-medium text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700">Tax</th>
+                        <th class="text-right py-1 px-2 font-medium text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700">Total</th>
+                        <th class="text-center py-1 px-2 font-medium text-gray-700 dark:text-gray-300">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white dark:bg-gray-800">
+                    <tr>
+                        <td colspan="8" class="py-8 text-center text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">Cart is empty</td>
+                    </tr>
+                </tbody>
+            </table>
+        `;
+        cartContainer.innerHTML = cartHTML;
         checkoutBtn.disabled = true;
+        const parkBtn = document.getElementById('parkCartBtn');
+        if (parkBtn) parkBtn.disabled = true;
         updateFinalTotal();
         return;
     }
     
     let total = 0;
-    let cartHTML = '';
+    
+            cartHTML = `
+        <table class="w-full text-sm table-fixed">
+            <thead class="bg-gray-50 dark:bg-gray-900 sticky top-0 z-0">
+                <tr class="border-b border-gray-200 dark:border-gray-700">
+                    <th class="text-left py-1 px-1 font-medium text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700 w-8">Sr.</th>
+                    <th class="text-left py-1 px-1 font-medium text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700 w-2/5">Item Name</th>
+                    <th class="text-left py-1 px-1 font-medium text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700 w-10">Desc</th>
+                    <th class="text-center py-1 px-1 font-medium text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700 w-10">Qty</th>
+                    <th class="text-right py-1 px-1 font-medium text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700 w-14">Price</th>
+                    <th class="text-right py-1 px-1 font-medium text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700 w-14">Tax</th>
+                    <th class="text-right py-1 px-1 font-medium text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700 w-14">Total</th>
+                    <th class="text-center py-1 px-1 font-medium text-gray-700 dark:text-gray-300 w-10">Action</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white dark:bg-gray-800">
+    `;
     
     cart.forEach((item, index) => {
         // Calculate tax backwards from tax-inclusive price
@@ -522,27 +795,36 @@ function updateCartDisplay() {
         total += itemSubtotal; // Add subtotal (without tax) to cart total
         
         cartHTML += `
-            <div class="flex items-center justify-between p-2 border rounded mb-2">
-                <div class="flex-1 min-w-0">
-                    <div class="flex items-center space-x-1">
-                        <h3 class="font-medium text-gray-900 text-sm truncate">${item.name}</h3>
-                        <span class="text-xs text-gray-400">|</span>
-                        <span class="text-xs text-gray-500">x${item.quantity}</span>
-                        <span class="text-xs text-gray-400">|</span>
-                        <span class="text-xs text-gray-500">PKR ${item.price.toFixed(2)} each (inc. tax)</span>
-                        ${item.tax_rate > 0 ? `<span class="text-xs text-gray-400">|</span><span class="text-xs text-red-500">${item.tax_rate}% tax</span>` : ''}
+            <tr class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
+                <td class="py-1 px-1 text-gray-600 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">${index + 1}</td>
+                <td class="py-1 px-1 font-medium text-gray-900 dark:text-gray-100 border-r border-gray-200 dark:border-gray-700">${item.name}</td>
+                <td class="py-1 px-1 text-gray-600 dark:text-gray-400 text-xs border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">${item.tax_rate > 0 ? `${item.tax_rate}% tax` : 'No tax'}</td>
+                <td class="py-1 px-1 text-center text-gray-900 dark:text-gray-100 border-r border-gray-200 dark:border-gray-700">${item.quantity}</td>
+                <td class="py-1 px-1 text-right text-gray-900 dark:text-gray-100 border-r border-gray-200 dark:border-gray-700">${item.price.toFixed(2)}</td>
+                <td class="py-1 px-1 text-right text-red-600 dark:text-red-400 border-r border-gray-200 dark:border-gray-700">${itemTax.toFixed(2)}</td>
+                <td class="py-1 px-1 text-right font-medium text-gray-900 dark:text-gray-100 border-r border-gray-200 dark:border-gray-700">${itemTotal.toFixed(2)}</td>
+                <td class="py-1 px-1 text-center">
+                    <div class="flex items-center justify-center space-x-0.5">
+                        <button onclick="updateQuantity(${index}, -1)" class="bg-red-500 hover:bg-red-700 text-white p-0.5 rounded text-xs">
+                            <i class="fas fa-minus text-xs"></i>
+                        </button>
+                        <button onclick="updateQuantity(${index}, 1)" class="bg-green-500 hover:bg-green-700 text-white p-0.5 rounded text-xs">
+                            <i class="fas fa-plus text-xs"></i>
+                        </button>
                     </div>
-                </div>
-                <div class="flex items-center space-x-1 flex-shrink-0 ml-2">
-                    <button onclick="updateQuantity(${index}, -1)" class="bg-red-500 hover:bg-red-700 text-white px-1 py-1 rounded text-xs">-</button>
-                    <span class="text-gray-900 text-sm px-1">${item.quantity}</span>
-                    <button onclick="updateQuantity(${index}, 1)" class="bg-green-500 hover:bg-green-700 text-white px-1 py-1 rounded text-xs">+</button>
-                </div>
-            </div>
+                </td>
+            </tr>
         `;
     });
     
+    cartHTML += `
+            </tbody>
+        </table>
+    `;
+    
     cartContainer.innerHTML = cartHTML;
+    const parkBtn = document.getElementById('parkCartBtn');
+    if (parkBtn) parkBtn.disabled = false;
     
     // Calculate tax backwards from tax-inclusive prices
     let totalTax = 0;
@@ -555,16 +837,30 @@ function updateCartDisplay() {
     
     const totalWithTax = total + totalTax;
     
-    totalElement.textContent = 'PKR ' + total.toFixed(2);
-    document.getElementById('cartTax').textContent = 'PKR ' + totalTax.toFixed(2);
-    document.getElementById('cartTotalWithTax').textContent = 'PKR ' + totalWithTax.toFixed(2);
+    // Add footer with totals after calculation
+    const tableElement = cartContainer.querySelector('table');
+    if (tableElement) {
+        const tfoot = document.createElement('tfoot');
+        tfoot.className = 'bg-gray-50 dark:bg-gray-900 border-t-2 border-gray-300 dark:border-gray-700 sticky bottom-0 z-10';
+        
+        tfoot.innerHTML = `
+            <tr class="border-t border-gray-300 dark:border-gray-700">
+                <td colspan="4" class="py-1 px-1 text-right font-semibold text-gray-800 dark:text-gray-200 border-r border-gray-200 dark:border-gray-700">Total</td>
+                <td class="py-1 px-1 text-right font-medium text-gray-900 dark:text-gray-100 border-r border-gray-200 dark:border-gray-700">${total.toFixed(2)}</td>
+                <td class="py-1 px-1 text-right font-medium text-red-600 dark:text-red-400 border-r border-gray-200 dark:border-gray-700">${totalTax.toFixed(2)}</td>
+                <td class="py-1 px-1 text-right font-bold text-gray-900 dark:text-gray-100 border-r border-gray-200 dark:border-gray-700">${totalWithTax.toFixed(2)}</td>
+                <td class="py-1 px-1"></td>
+            </tr>
+        `;
+        tableElement.appendChild(tfoot);
+    }
+    
     checkoutBtn.disabled = false;
     updateFinalTotal();
 }
 
 // Update final total after discount
 function updateFinalTotal() {
-    const total = parseFloat(document.getElementById('cartTotal').textContent.replace('PKR ', '')) || 0;
     const discount = parseFloat(document.getElementById('discountInput').value) || 0;
     
     // Calculate tax backwards from tax-inclusive prices
@@ -576,7 +872,7 @@ function updateFinalTotal() {
         totalTax += itemTax;
     });
     
-    const subtotal = total;
+    const subtotal = cart.reduce((sum, item) => sum + (item.tax_rate > 0 ? (item.price * item.quantity / (1 + item.tax_rate / 100)) : item.price * item.quantity), 0);
     const finalTotal = Math.max(0, subtotal + totalTax - discount);
     
     document.getElementById('finalTotal').textContent = 'PKR ' + finalTotal.toFixed(2);
@@ -689,7 +985,7 @@ function processPayment() {
     hidePaymentModal();
     
     // Calculate totals for submission (same as updateFinalTotal function)
-    const total = parseFloat(document.getElementById('cartTotal').textContent.replace('PKR ', '')) || 0;
+    const total = cart.reduce((sum, item) => sum + (item.tax_rate > 0 ? (item.price * item.quantity / (1 + item.tax_rate / 100)) : item.price * item.quantity), 0);
     
     // Calculate tax backwards from tax-inclusive prices
     let totalTax = 0;
@@ -965,12 +1261,34 @@ document.addEventListener('DOMContentLoaded', function() {
     
     console.log('Initialization complete');
     
+    // Load header state from localStorage
+    loadHeaderState();
+    
     // Set up periodic stock refresh for concurrent sales handling
     setInterval(refreshProductStock, 30000); // Refresh every 30 seconds
-});
 
-// Load header state from session
-loadHeaderState();
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e){
+        if (isTypingInForm()) return;
+        // Ctrl+F: focus search
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') { e.preventDefault(); const si=document.getElementById('searchInput'); if (si) si.focus(); return; }
+        // F2: focus search
+        if (e.key === 'F2') { e.preventDefault(); const si=document.getElementById('searchInput'); if (si) si.focus(); return; }
+        // Alt+P: open payment
+        if (e.altKey && (e.key.toLowerCase() === 'p')) { e.preventDefault(); const btn=document.getElementById('checkoutBtn'); if (btn && !btn.disabled) showPaymentModal(); return; }
+        // Alt+K: park sale (open note modal)
+        if (e.altKey && (e.key.toLowerCase() === 'k')) { e.preventDefault(); const park=document.getElementById('parkCartBtn'); if (park && !park.disabled) openParkNoteModal(); return; }
+        // Alt+R: open resume parked modal
+        if (e.altKey && (e.key.toLowerCase() === 'r')) { e.preventDefault(); openParkedModal(); return; }
+        // Alt+C: clear cart
+        if (e.altKey && (e.key.toLowerCase() === 'c')) { e.preventDefault(); clearCart(); return; }
+        // + / - adjust last item quantity
+        if (e.key === '+' || e.key === '=') { e.preventDefault(); adjustLastCartQuantity(1); return; }
+        if (e.key === '-' || e.key === '_') { e.preventDefault(); adjustLastCartQuantity(-1); return; }
+        // Delete: remove last item
+        if (e.key === 'Delete' || e.key === 'Backspace') { if (!cart.length) return; e.preventDefault(); updateQuantity(cart.length-1, -cart[cart.length-1].quantity); return; }
+    });
+});
 
 // Check if there's a successful sale to show invoice
 <?php if (isset($_SESSION['last_sale'])): ?>

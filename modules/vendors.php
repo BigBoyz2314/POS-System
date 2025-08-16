@@ -91,9 +91,11 @@ include '../includes/header.php';
 
 <div class="container mx-auto px-4 py-8">
     <div class="flex justify-between items-center mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">Vendor Management</h1>
+        <h1 class="text-3xl font-bold text-gray-900">
+            <i class="fas fa-truck mr-3"></i>Vendor Management
+        </h1>
         <button onclick="showAddModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-            Add New Vendor
+            <i class="fas fa-plus mr-2"></i>Add New Vendor
         </button>
     </div>
 
@@ -110,23 +112,23 @@ include '../includes/header.php';
     <?php endif; ?>
 
     <!-- Vendors Table -->
-    <div class="bg-white rounded-lg shadow-md">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md">
         <div class="px-6 py-4 border-b border-gray-200">
             <h2 class="text-lg font-semibold text-gray-900">Vendors</h2>
         </div>
         <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-gray-50 dark:bg-gray-900">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact Person</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Name</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Contact Person</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Phone</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Email</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Address</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
+                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                     <?php while ($vendor = mysqli_fetch_assoc($vendors)): ?>
                     <tr>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
@@ -145,10 +147,14 @@ include '../includes/header.php';
                             <?php echo htmlspecialchars($vendor['address']); ?>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <button onclick="showEditModal(<?php echo htmlspecialchars(json_encode($vendor)); ?>)"
-                                    class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</button>
-                            <button onclick="deleteVendor(<?php echo $vendor['id']; ?>)"
-                                    class="text-red-600 hover:text-red-900">Delete</button>
+                                                        <button onclick="showEditModal(<?php echo htmlspecialchars(json_encode($vendor)); ?>)"
+                                    class="text-indigo-600 hover:text-indigo-900 mr-3">
+                                <i class="fas fa-edit mr-1"></i>Edit
+                            </button>
+                            <button onclick="deleteVendor(<?php echo $vendor['id']; ?>)" 
+                                    class="text-red-600 hover:text-red-900">
+                                <i class="fas fa-trash mr-1"></i>Delete
+                            </button>
                         </td>
                     </tr>
                     <?php endwhile; ?>
@@ -159,8 +165,8 @@ include '../includes/header.php';
 </div>
 
 <!-- Add Vendor Modal -->
-<div id="addModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
-    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+<div id="addModal" class="fixed inset-0 bg-gray-900/60 overflow-y-auto h-full w-full hidden modal-overlay" onclick="if(event.target===this) document.getElementById('addModal').classList.add('hidden')">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 dark:text-gray-100 modal-panel" onclick="event.stopPropagation()">
         <div class="mt-3">
             <h3 class="text-lg font-medium text-gray-900 mb-4">Add New Vendor</h3>
             <form method="POST">
@@ -199,11 +205,11 @@ include '../includes/header.php';
                 <div class="flex justify-end space-x-4">
                     <button type="button" onclick="closeAddModal()" 
                             class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
-                        Cancel
+                        <i class="fas fa-times mr-2"></i>Cancel
                     </button>
                     <button type="submit" 
                             class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                        Add Vendor
+                        <i class="fas fa-plus mr-2"></i>Add Vendor
                     </button>
                 </div>
             </form>
@@ -212,8 +218,8 @@ include '../includes/header.php';
 </div>
 
 <!-- Edit Vendor Modal -->
-<div id="editModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
-    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+<div id="editModal" class="fixed inset-0 bg-gray-900/60 overflow-y-auto h-full w-full hidden modal-overlay" onclick="if(event.target===this) document.getElementById('editModal').classList.add('hidden')">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 dark:text-gray-100 modal-panel" onclick="event.stopPropagation()">
         <div class="mt-3">
             <h3 class="text-lg font-medium text-gray-900 mb-4">Edit Vendor</h3>
             <form method="POST">
@@ -253,11 +259,11 @@ include '../includes/header.php';
                 <div class="flex justify-end space-x-4">
                     <button type="button" onclick="closeEditModal()" 
                             class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
-                        Cancel
+                        <i class="fas fa-times mr-2"></i>Cancel
                     </button>
                     <button type="submit" 
                             class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                        Update Vendor
+                        <i class="fas fa-save mr-2"></i>Update Vendor
                     </button>
                 </div>
             </form>

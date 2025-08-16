@@ -1,39 +1,22 @@
-# OS-generated files
+# Dependencies and build outputs
+node_modules/
+vendor/
+assets/tailwind.css.map
+
+# Environment and secrets
+.env
+.env.*
+*.local
+
+# OS and editor files
 .DS_Store
 Thumbs.db
-
-# IDE/editor folders
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# Node (if ever used)
-node_modules/
-
-# PHP/Composer (not used now but safe to ignore)
-vendor/
-composer.lock
-composer.phar
-
-# Environment files
-.env
-.env.local
-.env.*.local
-
-# Logs and temp
 *.log
-logs/
-storage/
-cache/
-tmp/
-sessions/
+.idea/
+.vscode/
 
-# cPanel
-.cphorde/
-.cpanel/
-
-# Sensitive database config
-includes/db.php
+# Caches and temp
+.tmp/
+.cache/
 
 

@@ -27,7 +27,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['query'])) {
     if (strlen($query) >= 2) {
         // Search for specific products
         $search_query = "%$query%";
-        $stmt = mysqli_prepare($conn, "SELECT p.*, c.name as category_name FROM products p 
+        $stmt = mysqli_prepare($conn, "SELECT p.*, c.name as category_name,
+                                      COALESCE(
+                                          (SELECT AVG(pi.cost_price) 
+                                           FROM purchase_items pi 
+                                           JOIN purchases pu ON pi.purchase_id = pu.id 
+                                           WHERE pi.product_id = p.id 
+                                           AND pu.purchase_date >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+                                          ), p.cost_price
+                                      ) as avg_cost_price
+                                      FROM products p 
                                       LEFT JOIN categories c ON p.category_id = c.id 
                                       WHERE p.name LIKE ? OR p.sku LIKE ? 
                                       ORDER BY p.name LIMIT 10");
@@ -36,7 +45,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['query'])) {
         $result = mysqli_stmt_get_result($stmt);
     } else {
         // Load all products
-        $stmt = mysqli_prepare($conn, "SELECT p.*, c.name as category_name FROM products p 
+        $stmt = mysqli_prepare($conn, "SELECT p.*, c.name as category_name,
+                                      COALESCE(
+                                          (SELECT AVG(pi.cost_price) 
+                                           FROM purchase_items pi 
+                                           JOIN purchases pu ON pi.purchase_id = pu.id 
+                                           WHERE pi.product_id = p.id 
+                                           AND pu.purchase_date >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+                                          ), p.cost_price
+                                      ) as avg_cost_price
+                                      FROM products p 
                                       LEFT JOIN categories c ON p.category_id = c.id 
                                       ORDER BY p.name LIMIT 50");
         mysqli_stmt_execute($stmt);
@@ -56,27 +74,58 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['query'])) {
         
         while ($product = mysqli_fetch_assoc($result)) {
             $stock_class = $product['stock'] < 10 ? 'text-red-600' : 'text-green-600';
-            echo "
-            <div class='p-2 border rounded hover:bg-gray-50 cursor-pointer' onclick='addToCart(" . json_encode($product) . ")'>
-                <div class='flex justify-between items-center'>
-                    <div class='flex-1 min-w-0'>
-                        <div class='flex items-center space-x-1'>
-                            <h3 class='font-medium text-gray-900 text-sm truncate'>" . htmlspecialchars($product['name']) . "</h3>
-                            <span class='text-xs text-gray-400'>|</span>
-                            <span class='text-xs text-gray-500'>" . htmlspecialchars($product['sku']) . "</span>
-                            <span class='text-xs text-gray-400'>|</span>
-                            <span class='text-xs text-gray-500'>" . htmlspecialchars($product['category_name']) . "</span>
+            $avg_cost_price = $product['avg_cost_price'] ?: $product['cost_price'] ?: 0;
+            
+            // Check if this is being called from purchases page
+            $is_purchase_page = isset($_POST['is_purchase']) && $_POST['is_purchase'] == '1';
+            
+            if ($is_purchase_page) {
+                // Display for purchase page
+                echo "
+                <div class='p-2 border rounded hover:bg-gray-50 cursor-pointer' onclick='addToPurchaseCart(" . json_encode($product) . ")'>
+                    <div class='flex justify-between items-center'>
+                        <div class='flex-1 min-w-0'>
+                            <div class='flex items-center space-x-1'>
+                                <h3 class='font-medium text-gray-900 text-sm truncate'>" . htmlspecialchars($product['name']) . "</h3>
+                                <span class='text-xs text-gray-400'>|</span>
+                                <span class='text-xs text-gray-500'>" . htmlspecialchars($product['sku']) . "</span>
+                                <span class='text-xs text-gray-400'>|</span>
+                                <span class='text-xs text-gray-500'>" . htmlspecialchars($product['category_name']) . "</span>
+                            </div>
+                        </div>
+                        <div class='text-right flex-shrink-0 ml-2'>
+                            <div class='flex items-center space-x-2'>
+                                <p class='font-semibold text-gray-900 text-sm'>PKR " . number_format($avg_cost_price, 2) . "</p>
+                                <span class='text-xs text-gray-500'>avg cost</span>
+                                <span class='text-xs $stock_class'>(" . $product['stock'] . ")</span>
+                            </div>
                         </div>
                     </div>
-                    <div class='text-right flex-shrink-0 ml-2'>
-                        <div class='flex items-center space-x-2'>
-                            <p class='font-semibold text-gray-900 text-sm'>PKR " . number_format($product['price'], 2) . "</p>
-                            <span class='text-xs text-gray-500'>inc. tax</span>
-                            <span class='text-xs $stock_class'>(" . $product['stock'] . ")</span>
+                </div>";
+            } else {
+                // Display for sales page
+                echo "
+                <div class='p-2 border rounded hover:bg-gray-50 cursor-pointer' onclick='addToCart(" . json_encode($product) . ")'>
+                    <div class='flex justify-between items-center'>
+                        <div class='flex-1 min-w-0'>
+                            <div class='flex items-center space-x-1'>
+                                <h3 class='font-medium text-gray-900 text-sm truncate'>" . htmlspecialchars($product['name']) . "</h3>
+                                <span class='text-xs text-gray-400'>|</span>
+                                <span class='text-xs text-gray-500'>" . htmlspecialchars($product['sku']) . "</span>
+                                <span class='text-xs text-gray-400'>|</span>
+                                <span class='text-xs text-gray-500'>" . htmlspecialchars($product['category_name']) . "</span>
+                            </div>
+                        </div>
+                        <div class='text-right flex-shrink-0 ml-2'>
+                            <div class='flex items-center space-x-2'>
+                                <p class='font-semibold text-gray-900 text-sm'>PKR " . number_format($product['price'], 2) . "</p>
+                                <span class='text-xs text-gray-500'>inc. tax</span>
+                                <span class='text-xs $stock_class'>(" . $product['stock'] . ")</span>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>";
+                </div>";
+            }
         }
     } else {
         echo "<p class='text-gray-500 text-center p-4'>No products found</p>";
