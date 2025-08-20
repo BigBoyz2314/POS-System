@@ -3,10 +3,12 @@ session_start();
 require_once '../includes/auth.php';
 require_once '../includes/db.php';
 
-// Require admin access
-requireAdmin();
+// Require login access (used by Reports and Sales Returns)
+requireLogin();
 
 header('Content-Type: application/json');
+@ini_set('display_errors', '0');
+ob_start();
 
 // Check database connection
 if (!$conn) {
@@ -31,6 +33,7 @@ try {
                                    LEFT JOIN users u ON s.user_id = u.id 
                                    WHERE s.id = ?");
     if (!$stmt) {
+        ob_clean();
         echo json_encode(['success' => false, 'message' => 'Database error: ' . mysqli_error($conn)]);
         exit;
     }
@@ -40,6 +43,7 @@ try {
     $result = mysqli_stmt_get_result($stmt);
 
     if (mysqli_num_rows($result) == 0) {
+        ob_clean();
         echo json_encode(['success' => false, 'message' => 'Sale not found']);
         exit;
     }
@@ -52,6 +56,7 @@ try {
                                    JOIN products p ON si.product_id = p.id 
                                    WHERE si.sale_id = ?");
     if (!$stmt) {
+        ob_clean();
         echo json_encode(['success' => false, 'message' => 'Database error: ' . mysqli_error($conn)]);
         exit;
     }
@@ -60,21 +65,50 @@ try {
     mysqli_stmt_execute($stmt);
     $items_result = mysqli_stmt_get_result($stmt);
 
+    // Prepare statements to compute already returned quantities
+    $sum_by_saleitem = mysqli_prepare($conn, "SELECT COALESCE(SUM(quantity),0) AS returned_qty FROM returns WHERE sale_id = ? AND sale_item_id = ?");
+    $sum_by_product = mysqli_prepare($conn, "SELECT COALESCE(SUM(quantity),0) AS returned_qty FROM returns WHERE sale_id = ? AND sale_item_id IS NULL AND product_id = ?");
+
     $items = [];
     while ($item = mysqli_fetch_assoc($items_result)) {
+        $sale_item_id = isset($item['id']) ? intval($item['id']) : 0;
+        $product_id = intval($item['product_id']);
+        $sold_qty = floatval($item['quantity']);
+        $returned_qty = 0.0;
+        if ($sale_item_id > 0 && $sum_by_saleitem) {
+            mysqli_stmt_bind_param($sum_by_saleitem, 'ii', $sale_id, $sale_item_id);
+            mysqli_stmt_execute($sum_by_saleitem);
+            $rres = mysqli_stmt_get_result($sum_by_saleitem);
+            $rrow = mysqli_fetch_assoc($rres);
+            $returned_qty = floatval($rrow['returned_qty'] ?? 0);
+        } elseif ($sum_by_product) {
+            mysqli_stmt_bind_param($sum_by_product, 'ii', $sale_id, $product_id);
+            mysqli_stmt_execute($sum_by_product);
+            $rres = mysqli_stmt_get_result($sum_by_product);
+            $rrow = mysqli_fetch_assoc($rres);
+            $returned_qty = floatval($rrow['returned_qty'] ?? 0);
+        }
+        $remaining_qty = max(0, $sold_qty - $returned_qty);
+
         $items[] = [
+            'sale_item_id' => $sale_item_id ?: null,
+            'product_id' => $product_id,
             'name' => $item['product_name'],
-            'quantity' => $item['quantity'],
-            'price' => $item['price'],
-            'tax_rate' => $item['tax_rate']
+            'quantity' => $sold_qty,
+            'returned_qty' => $returned_qty,
+            'remaining_qty' => $remaining_qty,
+            'price' => floatval($item['price']),
+            'tax_rate' => floatval($item['tax_rate'])
         ];
     }
 
     $sale['items'] = $items;
 
+    ob_clean();
     echo json_encode(['success' => true, 'sale' => $sale]);
     
 } catch (Exception $e) {
+    ob_clean();
     echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
 }
 ?>

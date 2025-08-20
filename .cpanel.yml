@@ -1,11 +1,12 @@
 ---
 deployment:
   tasks:
-    - export DEPLOYPATH=public_html/pos.theacumentechnologies.com
+    - export DEPLOYPATH=${DEPLOYPATH:-public_html/pos.theacumentechnologies.com}
     - /bin/rsync -avr --delete \
         --exclude='.git' \
         --exclude='node_modules' \
         --exclude='.cpanel.yml' \
         --exclude='.env' \
         --exclude='*.log' \
+        --exclude='.gitignore' \
         ./ "$DEPLOYPATH/"

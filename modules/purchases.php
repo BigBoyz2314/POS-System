@@ -6,6 +6,9 @@ require_once '../includes/db.php';
 // Require admin access
 requireAdmin();
 
+// Throw mysqli errors as exceptions so our try/catch works reliably
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+
 $message = '';
 $error = '';
 
@@ -35,15 +38,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         
                         // Process purchase items
                         $items = json_decode($_POST['items'], true);
+                        if (!is_array($items) || empty($items)) {
+                            throw new Exception('No items provided for purchase.');
+                        }
+
                         foreach ($items as $item) {
+                            $product_id = isset($item['product_id']) ? intval($item['product_id']) : (isset($item['id']) ? intval($item['id']) : 0);
+                            $quantity = isset($item['quantity']) ? intval($item['quantity']) : 0;
+                            $cost_price = isset($item['cost_price']) ? floatval($item['cost_price']) : 0.0;
+
+                            if ($product_id <= 0 || $quantity <= 0 || $cost_price < 0) {
+                                throw new Exception('Invalid item data in purchase.');
+                            }
+
                             // Insert purchase item
                             $stmt = mysqli_prepare($conn, "INSERT INTO purchase_items (purchase_id, product_id, quantity, cost_price) VALUES (?, ?, ?, ?)");
-                            mysqli_stmt_bind_param($stmt, "iiid", $purchase_id, $item['product_id'], $item['quantity'], $item['cost_price']);
+                            mysqli_stmt_bind_param($stmt, "iiid", $purchase_id, $product_id, $quantity, $cost_price);
                             mysqli_stmt_execute($stmt);
-                            
+
                             // Update product stock and cost price
                             $stmt = mysqli_prepare($conn, "UPDATE products SET stock = stock + ?, cost_price = ? WHERE id = ?");
-                            mysqli_stmt_bind_param($stmt, "idi", $item['quantity'], $item['cost_price'], $item['product_id']);
+                            mysqli_stmt_bind_param($stmt, "idi", $quantity, $cost_price, $product_id);
                             mysqli_stmt_execute($stmt);
                         }
                         
@@ -52,6 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         
                     } catch (Exception $e) {
                         mysqli_rollback($conn);
+                        error_log('Purchase add failed: ' . $e->getMessage());
                         $error = 'Error processing purchase. Please try again.';
                     }
                 }
@@ -290,7 +306,7 @@ include '../includes/header.php';
 <div id="viewModal" class="fixed inset-0 bg-gray-900/60 overflow-y-auto h-full w-full hidden modal-overlay" onclick="if(event.target===this) closeViewModal()">
     <div class="relative top-10 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-md bg-white dark:bg-gray-800 dark:text-gray-100 modal-panel" onclick="event.stopPropagation()">
         <div class="mt-3">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">Purchase Details</h3>
+            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Purchase Details</h3>
             <div id="purchaseDetails">
                 <!-- Purchase details will be loaded here -->
             </div>
@@ -541,21 +557,26 @@ function showPurchaseDetails(purchaseData) {
     
     let itemsHTML = '';
     purchaseData.items.forEach(item => {
-        const total = item.cost_price * item.quantity;
+        const name = item.product_name || item.name || 'Item';
+        const qty = Number(item.quantity) || 0;
+        const price = Number(item.cost_price) || 0;
+        const total = price * qty;
         itemsHTML += `
-            <tr class="border-b">
-                <td class="py-2 px-4 text-sm">${item.name}</td>
-                <td class="py-2 px-4 text-sm text-center">${item.quantity}</td>
-                <td class="py-2 px-4 text-sm text-right">PKR ${item.cost_price.toFixed(2)}</td>
-                <td class="py-2 px-4 text-sm text-right font-medium">PKR ${total.toFixed(2)}</td>
+            <tr class="border-b border-gray-200 dark:border-gray-700">
+                <td class="py-2 px-4 text-sm text-gray-900 dark:text-gray-100">${name}</td>
+                <td class="py-2 px-4 text-sm text-center text-gray-900 dark:text-gray-100">${qty}</td>
+                <td class="py-2 px-4 text-sm text-right text-gray-900 dark:text-gray-100">PKR ${price.toFixed(2)}</td>
+                <td class="py-2 px-4 text-sm text-right font-medium text-gray-900 dark:text-gray-100">PKR ${total.toFixed(2)}</td>
             </tr>
         `;
     });
     
+    const totalAmount = Number(purchaseData.total_amount) || 0;
+
     const detailsHTML = `
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
-                <h4 class="font-semibold text-gray-900 mb-2">Purchase Information</h4>
+                <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">Purchase Information</h4>
                 <p><strong>Purchase ID:</strong> ${purchaseData.id}</p>
                 <p><strong>Date:</strong> ${purchaseData.purchase_date}</p>
                 <p><strong>Vendor:</strong> ${purchaseData.vendor_name}</p>
@@ -563,29 +584,29 @@ function showPurchaseDetails(purchaseData) {
                 <p><strong>Added By:</strong> ${purchaseData.user_name}</p>
             </div>
             <div>
-                <h4 class="font-semibold text-gray-900 mb-2">Notes</h4>
-                <p class="text-gray-600">${purchaseData.notes || 'No notes'}</p>
+                <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">Notes</h4>
+                <p class="text-gray-600 dark:text-gray-300">${purchaseData.notes || 'No notes'}</p>
             </div>
         </div>
         
-        <div class="bg-gray-50 rounded-lg p-4">
-            <h4 class="font-semibold text-gray-900 mb-4">Purchase Items</h4>
+        <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+            <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-4">Purchase Items</h4>
             <table class="w-full">
-                <thead class="bg-gray-100">
+                <thead class="bg-gray-100 dark:bg-gray-900">
                     <tr>
-                        <th class="text-left py-2 px-4 font-medium text-gray-700">Item</th>
-                        <th class="text-center py-2 px-4 font-medium text-gray-700">Quantity</th>
-                        <th class="text-right py-2 px-4 font-medium text-gray-700">Cost Price</th>
-                        <th class="text-right py-2 px-4 font-medium text-gray-700">Total</th>
+                        <th class="text-left py-2 px-4 font-medium text-gray-700 dark:text-gray-300">Item</th>
+                        <th class="text-center py-2 px-4 font-medium text-gray-700 dark:text-gray-300">Quantity</th>
+                        <th class="text-right py-2 px-4 font-medium text-gray-700 dark:text-gray-300">Cost Price</th>
+                        <th class="text-right py-2 px-4 font-medium text-gray-700 dark:text-gray-300">Total</th>
                     </tr>
                 </thead>
                 <tbody>
                     ${itemsHTML}
                 </tbody>
-                <tfoot class="bg-gray-100">
+                <tfoot class="bg-gray-100 dark:bg-gray-900">
                     <tr>
-                        <td colspan="3" class="py-2 px-4 text-right font-semibold">Total:</td>
-                        <td class="py-2 px-4 text-right font-bold">PKR ${purchaseData.total_amount.toFixed(2)}</td>
+                        <td colspan="3" class="py-2 px-4 text-right font-semibold text-gray-700 dark:text-gray-300">Total:</td>
+                        <td class="py-2 px-4 text-right font-bold text-gray-900 dark:text-gray-100">PKR ${totalAmount.toFixed(2)}</td>
                     </tr>
                 </tfoot>
             </table>

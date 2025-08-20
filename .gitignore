@@ -2,6 +2,7 @@
 node_modules/
 vendor/
 assets/tailwind.css.map
+assets/tailwind.css
 
 # Environment and secrets
 .env
@@ -14,9 +15,16 @@ Thumbs.db
 *.log
 .idea/
 .vscode/
+.fleet/
 
 # Caches and temp
 .tmp/
 .cache/
+
+
+# OS trash and archives
+**/.Trash
+*.zip
+*.tar.gz
 
 

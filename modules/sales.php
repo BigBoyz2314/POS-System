@@ -212,6 +212,12 @@ include '../includes/header.php';
                 <button id="controlsBtn" class="bg-gray-500 hover:bg-gray-700 dark:bg-gray-600 dark:hover:bg-gray-500 text-white p-2 rounded text-sm" title="Show Controls" onclick="openControlsModal()">
                     <i class="fas fa-keyboard"></i>
                 </button>
+                <button id="returnsListBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded text-sm" title="View Returns" onclick="openReturnsListModal()">
+                    <i class="fas fa-clipboard-list"></i>
+                </button>
+                <button id="returnsBtn" class="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded text-sm" title="Returns/Exchanges" onclick="openSalesLookupModal()">
+                    <i class="fas fa-undo"></i>
+                </button>
                 <button id="toggleHeaderBtn" class="bg-gray-500 hover:bg-gray-700 dark:bg-gray-600 dark:hover:bg-gray-500 text-white p-2 rounded text-sm">
                     <i class="fas fa-eye-slash"></i>
                 </button>
@@ -250,6 +256,74 @@ include '../includes/header.php';
         </div>
     </div>
 </div>
+
+<!-- Returns/Exchanges Modal -->
+<div id="returnsModal" class="fixed inset-0 bg-gray-900/60 overflow-y-auto h-full w-full hidden modal-overlay flex items-center justify-center" onclick="if(event.target===this) closeReturnsModal()">
+  <div class="relative mx-auto p-5 border w-[95vw] max-w-6xl shadow-lg rounded-md bg-white dark:bg-gray-800 dark:text-gray-100 modal-panel max-h-[80vh] flex flex-col" onclick="event.stopPropagation()">
+    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-3">
+      <i class="fas fa-undo mr-2"></i>Returns / Exchanges
+    </h3>
+    <div class="mb-3 flex items-center gap-2">
+      <input id="returnSaleId" type="number" min="1" placeholder="Enter Sale ID" class="w-40 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+      <button class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded" onclick="loadSaleForReturn()"><i class="fas fa-search mr-1"></i>Load</button>
+    </div>
+    <div id="returnSaleInfo" class="text-sm mb-3 text-gray-700 dark:text-gray-300"></div>
+    <div id="returnItemsWrap" class="border border-gray-200 dark:border-gray-700 rounded mb-3 hidden flex-1 min-h-0 overflow-y-auto">
+      <table class="w-full text-sm table-fixed">
+        <thead class="bg-gray-50 dark:bg-gray-900">
+          <tr class="border-b border-gray-200 dark:border-gray-700">
+            <th class="text-left py-1 px-2 font-medium text-gray-700 dark:text-gray-300 w-1/3 text-xs whitespace-nowrap">Item</th>
+            <th class="text-center py-1 px-1 font-medium text-gray-700 dark:text-gray-300 w-12 text-xs whitespace-nowrap">Sold</th>
+            <th class="text-center py-1 px-1 font-medium text-gray-700 dark:text-gray-300 w-12 text-xs whitespace-nowrap">Ret.</th>
+            <th class="text-center py-1 px-1 font-medium text-gray-700 dark:text-gray-300 w-12 text-xs whitespace-nowrap">Rem.</th>
+            <th class="text-center py-1 px-1 font-medium text-gray-700 dark:text-gray-300 w-20 text-xs whitespace-nowrap">Return Qty</th>
+            <th class="text-left py-1 px-2 font-medium text-gray-700 dark:text-gray-300 w-56 text-xs whitespace-nowrap">Reason</th>
+            <th class="text-right py-1 px-2 font-medium text-gray-700 dark:text-gray-300 w-24 text-xs whitespace-nowrap">Refund</th>
+          </tr>
+        </thead>
+        <tbody id="returnItemsTbody" class="bg-white dark:bg-gray-800"></tbody>
+        <tfoot class="bg-gray-50 dark:bg-gray-900 sticky bottom-0 z-10 border-t-2 border-gray-300 dark:border-gray-700">
+          <tr class="border-t border-gray-200 dark:border-gray-700">
+            <td colspan="6" class="py-2 px-2 text-right font-semibold text-gray-800 dark:text-gray-200">Total Refund</td>
+            <td class="py-2 px-2 text-right font-bold text-gray-900 dark:text-gray-100"><span id="totalRefund">PKR 0.00</span></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    <!-- Refund method & amounts -->
+    <div id="returnRefundSection" class="border-t pt-3 mb-3 hidden">
+      <div class="flex items-center justify-between mb-2">
+        <div class="text-sm font-medium text-gray-900 dark:text-gray-100">Refund</div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Refund Method</label>
+          <select id="refundMethodReturn" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="updateRefundInputsSection()">
+            <option value="cash">Cash Only</option>
+            <option value="card">Card Only</option>
+            <option value="mixed">Cash + Card</option>
+          </select>
+        </div>
+        <div id="refundCashWrap">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cash Refund (PKR)</label>
+          <input id="refundCash" type="number" step="0.01" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" oninput="returnAutofillLocked=true; validateReturnSubmission()">
+        </div>
+        <div id="refundCardWrap" class="hidden">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Card Refund (PKR)</label>
+          <input id="refundCard" type="number" step="0.01" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" oninput="returnAutofillLocked=true; validateReturnSubmission()">
+        </div>
+      </div>
+      <div class="mt-2 text-xs text-gray-500 dark:text-gray-400">Total refund must equal: <span id="expectedRefundLabel">PKR 0.00</span></div>
+    </div>
+    <div class="flex justify-between items-center">
+      <div class="text-xs text-gray-500 dark:text-gray-400">Refund will be issued to original tender (cash/card split as per sale).</div>
+      <div class="flex gap-2">
+        <button class="bg-gray-500 hover:bg-gray-700 text-white px-4 py-2 rounded" onclick="closeReturnsModal()"><i class="fas fa-times mr-1"></i>Close</button>
+        <button id="processReturnBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded disabled:bg-gray-400" disabled onclick="submitReturn()"><i class="fas fa-check mr-1"></i>Process Return</button>
+      </div>
+    </div>
+  </div>
+  </div>
 
 <!-- Payment Modal -->
 <div id="paymentModal" class="fixed inset-0 bg-gray-900/60 overflow-y-auto h-full w-full hidden modal-overlay" onclick="if(event.target===this) hidePaymentModal()">
@@ -349,6 +423,44 @@ include '../includes/header.php';
   </div>
 </div>
 
+<!-- Sales Lookup Modal -->
+<div id="salesLookupModal" class="fixed inset-0 bg-gray-900/60 overflow-y-auto h-full w-full hidden modal-overlay" onclick="if(event.target===this) closeSalesLookupModal()">
+  <div class="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white dark:bg-gray-800 dark:text-gray-100 modal-panel max-h-[80vh] flex flex-col" onclick="event.stopPropagation()">
+    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-3"><i class="fas fa-receipt mr-2"></i>Select a Sale</h3>
+    <div class="mb-3">
+      <div class="relative">
+        <i class="fas fa-search absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+        <input id="salesLookupSearch" type="text" placeholder="Search by Sale ID, cashier, or method..." class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+    </div>
+    <div id="salesLookupList" class="border border-gray-200 dark:border-gray-700 rounded p-2 overflow-y-auto text-sm flex-1 min-h-0">
+      <div class="text-gray-500 dark:text-gray-400">Loading...</div>
+    </div>
+    <div class="flex justify-end gap-2 mt-4">
+      <button class="bg-gray-500 hover:bg-gray-700 text-white px-4 py-2 rounded" onclick="closeSalesLookupModal()"><i class="fas fa-times mr-1"></i>Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Returns List Modal -->
+<div id="returnsListModal" class="fixed inset-0 bg-gray-900/60 overflow-y-auto h-full w-full hidden modal-overlay" onclick="if(event.target===this) closeReturnsListModal()">
+  <div class="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white dark:bg-gray-800 dark:text-gray-100 modal-panel max-h-[80vh] flex flex-col" onclick="event.stopPropagation()">
+    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-3"><i class="fas fa-clipboard-list mr-2"></i>Recent Returns</h3>
+    <div class="mb-3">
+      <div class="relative">
+        <i class="fas fa-search absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+        <input id="returnsLookupSearch" type="text" placeholder="Search by Sale ID, product, reason..." class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+    </div>
+    <div id="returnsLookupList" class="border border-gray-200 dark:border-gray-700 rounded p-2 overflow-y-auto text-sm flex-1 min-h-0">
+      <div class="text-gray-500 dark:text-gray-400">Loading...</div>
+    </div>
+    <div class="flex justify-end gap-2 mt-4">
+      <button class="bg-gray-500 hover:bg-gray-700 text-white px-4 py-2 rounded" onclick="closeReturnsListModal()"><i class="fas fa-times mr-1"></i>Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- Parked Sales Modal -->
 <div id="parkedModal" class="fixed inset-0 bg-gray-900/60 overflow-y-auto h-full w-full hidden modal-overlay" onclick="if(event.target===this) closeParkedModal()">
   <div class="relative top-10 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 dark:text-gray-100 modal-panel" onclick="event.stopPropagation()">
@@ -393,10 +505,24 @@ include '../includes/header.php';
 let cart = [];
 let searchTimeout;
 let headerHidden = false;
+let currentReturn = { sale: null, items: [] };
+let allSalesCache = [];
+let allReturnsCache = [];
+let returnAutofillLocked = false;
 
 // Save cart to localStorage
 function saveCartToStorage() {
     localStorage.setItem('pos_cart', JSON.stringify(cart));
+}
+
+// Helper: parse JSON with graceful fallback to text
+async function parseJsonFromResponse(resp) {
+    const text = await resp.text();
+    try {
+        return { ok: true, data: JSON.parse(text) };
+    } catch (e) {
+        return { ok: false, text };
+    }
 }
 
 // Load cart from localStorage
@@ -519,6 +645,404 @@ async function loadParkedList() {
     } catch (e) {
         list.innerHTML = '<div class="text-red-600">'+ (e.message || 'Error') +'</div>';
     }
+}
+
+// Returns modal helpers
+function openReturnsModal(){ document.getElementById('returnsModal').classList.remove('hidden'); }
+function closeReturnsModal(){ document.getElementById('returnsModal').classList.add('hidden'); resetReturnState(); }
+function resetReturnState(){ currentReturn = { sale: null, items: [] }; returnAutofillLocked = false; document.getElementById('returnSaleInfo').innerHTML=''; document.getElementById('returnItemsWrap').classList.add('hidden'); document.getElementById('returnItemsTbody').innerHTML=''; document.getElementById('totalRefund').textContent='PKR 0.00'; const btn=document.getElementById('processReturnBtn'); if (btn) btn.disabled = true; }
+async function loadSaleForReturn(){
+  const saleId = parseInt(document.getElementById('returnSaleId').value, 10);
+  if (!saleId) { alert('Enter a valid Sale ID'); return; }
+  try {
+    const resp = await fetch('get_sale_details.php?sale_id=' + saleId);
+    const parsed = await parseJsonFromResponse(resp);
+    if (!parsed.ok) {
+        console.error('Non-JSON response from get_sale_details.php:', parsed.text);
+        throw new Error('Server returned non-JSON. Check PHP errors/logs.');
+    }
+    const data = parsed.data;
+    if (!data.success) throw new Error(data.message || 'Failed to load sale');
+    const sale = data.sale || {};
+    currentReturn.sale = sale;
+    document.getElementById('returnSaleInfo').innerHTML = `Sale #${sale.id} • ${sale.cashier_name || ''} • Method: ${String(sale.payment_method||'').toUpperCase()} • Total: PKR ${(parseFloat(sale.total_amount||sale.final||0)).toFixed(2)}`;
+    renderReturnItems(Array.isArray(sale.items) ? sale.items : []);
+    const wrap = document.getElementById('returnItemsWrap');
+    if (wrap) wrap.classList.remove('hidden');
+    // Focus first qty input for quick entry
+    const firstQty = document.querySelector('#returnItemsTbody input[type="number"]');
+    if (firstQty) firstQty.focus();
+  } catch (e) { alert(e.message || 'Error'); }
+}
+function renderReturnItems(items){
+  const tbody = document.getElementById('returnItemsTbody');
+  tbody.innerHTML = items.map((it, idx) => {
+    const soldQty = Number(it.quantity) || 0;
+    const returnedQty = Number(it.returned_qty || 0);
+    const remainingQty = Number((it.remaining_qty != null ? it.remaining_qty : (soldQty - returnedQty))) || 0;
+    const price = Number(it.price) || 0;
+    const rowId = 'ret_'+idx;
+    return `
+      <tr class="border-b border-gray-200 dark:border-gray-700">
+        <td class="py-1 px-2 text-gray-900 dark:text-gray-100">${it.name}</td>
+        <td class="py-1 px-1 text-center text-gray-900 dark:text-gray-100 text-xs whitespace-nowrap">${soldQty}</td>
+        <td class="py-1 px-1 text-center text-gray-900 dark:text-gray-100 text-xs whitespace-nowrap">${returnedQty}</td>
+        <td class="py-1 px-1 text-center text-gray-900 dark:text-gray-100 text-xs whitespace-nowrap">${remainingQty}</td>
+        <td class="py-1 px-2 text-center">
+          <div class="inline-flex items-center">
+            <button class="bg-red-500 hover:bg-red-700 text-white p-0.5 rounded text-xs" title="Decrease" aria-label="Decrease" onclick="changeReturnQty(${idx}, -1)"><i class="fas fa-minus text-xs"></i></button>
+            <span id="${rowId}_qval" class="mx-2 text-gray-900 dark:text-gray-100">0</span>
+            <button class="bg-green-500 hover:bg-green-700 text-white p-0.5 rounded text-xs" title="Increase" aria-label="Increase" data-retplus="1" onclick="changeReturnQty(${idx}, 1)"><i class="fas fa-plus text-xs"></i></button>
+          </div>
+        </td>
+        <td class="py-1 px-2"><input type="text" id="${rowId}_reason" placeholder="Reason (required)" class="w-full px-2 py-1 border border-gray-300 rounded" oninput="updateReturnRefund(${idx})"></td>
+        <td class="py-1 px-2 text-right text-gray-900 dark:text-gray-100"><span id="${rowId}_refund">PKR 0.00</span></td>
+      </tr>
+    `;
+  }).join('');
+  currentReturn.items = items.map(it => ({ product_id: it.product_id, sale_item_id: it.sale_item_id || null, name: it.name, maxQty: Number(it.remaining_qty != null ? it.remaining_qty : it.quantity)||0, price: Number(it.price)||0, tax_rate: Number(it.tax_rate)||0, returnQty: 0, reason: '' }));
+  updateTotalRefund();
+}
+function updateReturnRefund(idx){
+  const rowId = 'ret_'+idx;
+  const qtyLabel = document.getElementById(rowId+'_qval');
+  const reasonEl = document.getElementById(rowId+'_reason');
+  const refundEl = document.getElementById(rowId+'_refund');
+  const entry = currentReturn.items[idx];
+  const qty = Math.max(0, Math.min(parseInt((qtyLabel?.textContent)||'0',10), entry.maxQty));
+  if (qtyLabel) qtyLabel.textContent = String(qty);
+  entry.returnQty = qty;
+  entry.reason = (reasonEl.value||'').trim();
+  const taxMultiplier = entry.tax_rate > 0 ? (1 + entry.tax_rate/100) : 1;
+  const unitTotal = entry.price * taxMultiplier;
+  const refund = unitTotal * qty;
+  refundEl.textContent = 'PKR ' + refund.toFixed(2);
+  updateTotalRefund();
+}
+function changeReturnQty(idx, delta){
+  const entry = currentReturn.items[idx];
+  const rowId = 'ret_'+idx;
+  const qtyLabel = document.getElementById(rowId+'_qval');
+  const current = parseInt((qtyLabel?.textContent)||'0',10) || 0;
+  const next = Math.max(0, Math.min(current + delta, entry.maxQty));
+  if (qtyLabel) qtyLabel.textContent = String(next);
+  updateReturnRefund(idx);
+}
+function updateTotalRefund(){
+  const total = currentReturn.items.reduce((s,it)=>{
+    const taxMultiplier = it.tax_rate > 0 ? (1 + it.tax_rate/100) : 1;
+    return s + (it.returnQty * it.price * taxMultiplier);
+  }, 0);
+  document.getElementById('totalRefund').textContent = 'PKR ' + total.toFixed(2);
+  const expected = document.getElementById('expectedRefundLabel');
+  if (expected) expected.textContent = 'PKR ' + total.toFixed(2);
+  const section = document.getElementById('returnRefundSection');
+  if (section) section.classList.remove('hidden');
+  if (!returnAutofillLocked) { autofillReturnAmounts(); }
+  const any = currentReturn.items.some(it => it.returnQty > 0 && it.reason.length > 0);
+  const btn = document.getElementById('processReturnBtn');
+  if (btn) btn.disabled = !any || !isRefundAmountsValid(total);
+}
+function updateRefundInputsSection(){
+  const method = document.getElementById('refundMethodReturn').value;
+  const cashWrap = document.getElementById('refundCashWrap');
+  const cardWrap = document.getElementById('refundCardWrap');
+  if (method === 'cash') { cashWrap.classList.remove('hidden'); cardWrap.classList.add('hidden'); }
+  else if (method === 'card') { cashWrap.classList.add('hidden'); cardWrap.classList.remove('hidden'); }
+  else { cashWrap.classList.remove('hidden'); cardWrap.classList.remove('hidden'); }
+  returnAutofillLocked = false; // changing method re-enables autofill
+  autofillReturnAmounts();
+  validateReturnSubmission();
+}
+function isRefundAmountsValid(expected){
+  const method = document.getElementById('refundMethodReturn').value;
+  const cash = parseFloat(document.getElementById('refundCash').value)||0;
+  const card = parseFloat(document.getElementById('refundCard').value)||0;
+  if (method === 'cash') return Math.abs(cash - expected) < 0.01;
+  if (method === 'card') return Math.abs(card - expected) < 0.01;
+  return Math.abs((cash+card) - expected) < 0.01;
+}
+function validateReturnSubmission(){
+  // Re-evaluate total and enable
+  const total = (function(){
+    let s = 0; currentReturn.items.forEach(it=>{ const m = it.tax_rate>0?(1+it.tax_rate/100):1; s += it.returnQty*it.price*m; }); return s; })();
+  const btn = document.getElementById('processReturnBtn');
+  const any = currentReturn.items.some(it => it.returnQty > 0 && it.reason.length > 0);
+  if (btn) btn.disabled = !any || !isRefundAmountsValid(total);
+}
+function autofillReturnAmounts(){
+  // Set refund inputs to match expected total and method
+  const expectedText = document.getElementById('expectedRefundLabel').textContent.replace('PKR','').trim();
+  const expected = parseFloat(expectedText)||0;
+  const method = document.getElementById('refundMethodReturn').value;
+  const cashInput = document.getElementById('refundCash');
+  const cardInput = document.getElementById('refundCard');
+  if (method === 'cash') { if (cashInput) cashInput.value = expected.toFixed(2); if (cardInput) cardInput.value = '0.00'; }
+  else if (method === 'card') { if (cashInput) cashInput.value = '0.00'; if (cardInput) cardInput.value = expected.toFixed(2); }
+  else { // mixed: default to all cash, user can adjust
+    if (cashInput) cashInput.value = expected.toFixed(2);
+    if (cardInput) cardInput.value = '0.00';
+  }
+  validateReturnSubmission();
+}
+async function submitReturn(){
+  try {
+    if (!currentReturn.sale) { alert('Load a sale first.'); return; }
+    const payloadItems = currentReturn.items.filter(it => it.returnQty > 0).map(it => ({ sale_item_id: it.sale_item_id, product_id: it.product_id, quantity: it.returnQty, reason: it.reason }));
+    if (!payloadItems.length) { alert('Select quantities and reasons.'); return; }
+    const form = new URLSearchParams();
+    form.set('sale_id', currentReturn.sale.id);
+    form.set('items', JSON.stringify(payloadItems));
+    // refund method
+    const method = document.getElementById('refundMethodReturn').value;
+    const cash = parseFloat(document.getElementById('refundCash').value)||0;
+    const card = parseFloat(document.getElementById('refundCard').value)||0;
+    form.set('refund_method', method);
+    form.set('refund_cash', String(cash));
+    form.set('refund_card', String(card));
+    const resp = await fetch('ajax_process_return.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: form.toString() });
+    const data = await resp.json();
+    if (!data.success) throw new Error(data.message || 'Failed to process return');
+    if (window.UIKit) UIKit.success('Return processed');
+    if (data.receipt_id) {
+      // Offer immediate print
+      if (confirm('Return processed. Print return invoice now?')) {
+        printReturnInvoice({
+          saleId: currentReturn.sale.id,
+          receiptId: data.receipt_id,
+          receipt: data.receipt
+        });
+      }
+    }
+    closeReturnsModal();
+  } catch (e) { if (window.UIKit) UIKit.error(e.message || 'Error'); }
+}
+
+function printReturnInvoice({ saleId, receiptId, receipt }){
+  try {
+    const now = new Date();
+    const currentDate = now.toLocaleDateString();
+    const currentTime = now.toLocaleTimeString();
+    const itemsHTML = (receipt.items||[]).map(it => `
+      <tr class="border-b">
+        <td class="py-1 text-left text-xs" style="padding: 2px; font-size: 12px;">${it.name || ('#'+it.product_id)}</td>
+        <td class="py-1 text-center text-xs" style="padding: 2px; font-size: 12px;">${it.quantity}</td>
+        <td class="py-1 text-right text-xs" style="padding: 2px; font-size: 12px;">${(parseFloat(it.unit_price)||0).toFixed(2)}</td>
+        <td class="py-1 text-right text-xs" style="padding: 2px; font-size: 12px;">${(parseFloat(it.line_total)||0).toFixed(2)}</td>
+      </tr>
+      <tr><td colspan="4" class="py-0 text-left text-xs" style="padding: 1px 2px; font-size: 10px; color: #666;">Reason: ${it.reason||''}</td></tr>
+      <tr>
+        <td colspan="4" class="py-0" style="padding: 0; font-size: 10px; color: #666;">
+          <div style="border-bottom: 1px solid #eee; margin: 1px 0;"></div>
+        </td>
+      </tr>
+    `).join('');
+
+    const html = '<!DOCTYPE html>' +
+      '<html><head><title>Return Invoice</title>' +
+      '<style>' +
+      'body { font-family: Arial, sans-serif; margin: 0; padding: 2mm; font-size: 11px; line-height: 1.2; width: 76mm; overflow-x: hidden; }' +
+      'table { width: 100%; border-collapse: collapse; font-size: 10px; table-layout: fixed; }' +
+      'th, td { padding: 1px; text-align: left; word-wrap: break-word; }' +
+      'th:nth-child(1), td:nth-child(1) { width: 35%; }' +
+      'th:nth-child(2), td:nth-child(2) { width: 15%; text-align: center; }' +
+      'th:nth-child(3), td:nth-child(3) { width: 25%; text-align: right; }' +
+      'th:nth-child(4), td:nth-child(4) { width: 25%; text-align: right; }' +
+      '.dup { position: fixed; top: 10mm; left: 0; right: 0; text-align: center; font-size: 18px; color: rgba(200,0,0,0.25); transform: rotate(-20deg); }' +
+      '@media print { body { margin: 0; padding: 2mm; width: 76mm; } @page { margin: 0; size: 80mm auto; } }' +
+      '</style></head><body>' +
+      '<div class="dup">DUPLICATE</div>' +
+      '<div style="font-size:14px; line-height:1.3; width:100%; padding:0 3mm;">' +
+      '<div style="text-align:center; margin-bottom:3px;">' +
+      '<h2 style="font-size:18px; margin:0;">RETURN INVOICE</h2>' +
+      `<p style="font-size:12px; margin:2px 0;">Sale #${saleId} • Return #${receiptId}</p>` +
+      `<p style="font-size:12px; margin:2px 0;">${currentDate} ${currentTime}</p>` +
+      '</div>' +
+      '<div style="margin-bottom:3px;">' +
+      '<table style="font-size:12px; margin:2px 0; table-layout: fixed;">' +
+      '<thead><tr class="border-b" style="border-bottom:1px solid #ccc;">' +
+      '<th style="padding:2px; width:45%; text-align:left;">Item</th>' +
+      '<th style="padding:2px; width:15%; text-align:center;">Qty</th>' +
+      '<th style="padding:2px; width:20%; text-align:right;">Price</th>' +
+      '<th style="padding:2px; width:20%; text-align:right;">Total</th>' +
+      '</tr></thead>' +
+      `<tbody>${itemsHTML}</tbody>` +
+      '</table>' +
+      '</div>' +
+      '<div style="border-top:1px solid #ccc; padding-top:2px;">' +
+      '<table style="width:100%; border-collapse:collapse;">' +
+      `<tr><td style="text-align:left; padding:1px 2px; font-size:12px;">Total Refund:</td><td style="text-align:right; padding:1px 2px; font-size:12px;">PKR ${(parseFloat(receipt.total_refund||0)).toFixed(2)}</td></tr>` +
+      (parseFloat(receipt.cash_refund||0) > 0 ? `<tr><td style="text-align:left; padding:1px 2px; font-size:12px;">Cash Refund:</td><td style="text-align:right; padding:1px 2px; font-size:12px;">PKR ${(parseFloat(receipt.cash_refund)).toFixed(2)}</td></tr>` : '') +
+      (parseFloat(receipt.card_refund||0) > 0 ? `<tr><td style="text-align:left; padding:1px 2px; font-size:12px;">Card Refund:</td><td style="text-align:right; padding:1px 2px; font-size:12px;">PKR ${(parseFloat(receipt.card_refund)).toFixed(2)}</td></tr>` : '') +
+      '</table>' +
+      '</div>' +
+      '</div>' +
+      '<' + 'script' + '>' +
+      'window.onload = function(){ window.print(); window.close(); };' +
+      '</' + 'script' + '>' +
+      '</body></html>';
+
+    const w = window.open('', '_blank', 'width=400,height=600,scrollbars=yes,resizable=yes');
+    if (!w) { alert('Popup blocked!'); return; }
+    w.document.write(html);
+    w.document.close();
+  } catch (e) { alert('Error printing: ' + (e.message||e)); }
+}
+
+// Sales lookup helpers
+function openSalesLookupModal(){
+  document.getElementById('salesLookupModal').classList.remove('hidden');
+  loadRecentSales();
+}
+
+// Returns list helpers
+function openReturnsListModal(){ document.getElementById('returnsListModal').classList.remove('hidden'); loadRecentReturns(); }
+function closeReturnsListModal(){ document.getElementById('returnsListModal').classList.add('hidden'); }
+async function loadRecentReturns(){
+  const list = document.getElementById('returnsLookupList');
+  list.innerHTML = '<div class="text-gray-500 dark:text-gray-400">Loading...</div>';
+  try {
+    const resp = await fetch('list_returns.php');
+    const parsed = await parseJsonFromResponse(resp);
+    if (!parsed.ok) { console.error('Non-JSON from list_returns.php:', parsed.text); throw new Error('Server returned non-JSON.'); }
+    const data = parsed.data;
+    if (!data.success) throw new Error(data.message || 'Failed to load');
+    allReturnsCache = Array.isArray(data.returns) ? data.returns : [];
+    renderReturnsLookup(allReturnsCache);
+    const search = document.getElementById('returnsLookupSearch');
+    if (search) {
+      search.oninput = function(){
+        const q = this.value.toLowerCase().trim();
+        const filtered = allReturnsCache.filter(r => String(r.sale_id).includes(q) || (r.product_name||'').toLowerCase().includes(q) || (r.reason||'').toLowerCase().includes(q));
+        renderReturnsLookup(filtered);
+      };
+    }
+  } catch (e) {
+    list.innerHTML = '<div class="text-red-600">'+ (e.message || 'Error') +'</div>';
+  }
+}
+function renderReturnsLookup(rows){
+  const list = document.getElementById('returnsLookupList');
+  if (!rows.length) { list.innerHTML = '<div class="text-gray-500 dark:text-gray-400">No returns found</div>'; return; }
+  // Group returns by sale_id
+  const groups = {};
+  rows.forEach(r => { (groups[r.sale_id] = groups[r.sale_id] || []).push(r); });
+  const html = Object.keys(groups).map(saleId => {
+    const lines = groups[saleId];
+    const totalRefund = lines.reduce((s, l) => s + (parseFloat(l.refund_amount||0)), 0);
+    const summary = `Invoice #${saleId} • Refund: PKR ${totalRefund.toFixed(2)}`;
+    const items = lines.map(l => `
+      <tr class="border-b last:border-b-0 border-gray-200 dark:border-gray-700">
+        <td class="py-1 px-2">${l.product_name || ('#'+l.product_id)}</td>
+        <td class="py-1 px-2 text-center">${parseFloat(l.quantity||0)}</td>
+        <td class="py-1 px-2 text-right">PKR ${(parseFloat(l.refund_amount||0)).toFixed(2)}</td>
+        <td class="py-1 px-2">${l.reason || ''}</td>
+      </tr>
+    `).join('');
+    return `
+      <div class="border-b last:border-b-0 border-gray-200 dark:border-gray-700">
+        <div class="w-full py-2 px-2 flex items-center justify-between cursor-pointer select-none" onclick="toggleReturnGroup(this)">
+          <span class="font-medium text-gray-900 dark:text-gray-100 truncate">${summary}</span>
+          <span class="inline-flex items-center gap-2 shrink-0 whitespace-nowrap">
+            <button class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs" onclick="event.stopPropagation(); reprintReturn(${saleId})"><i class='fas fa-print mr-1'></i>Reprint</button>
+            <i class="fas fa-chevron-down text-gray-500"></i>
+          </span>
+        </div>
+        <div class="hidden px-2 pb-2">
+          <table class="w-full text-xs">
+            <thead class="bg-gray-50 dark:bg-gray-900">
+              <tr>
+                <th class="text-left py-1 px-2">Item</th>
+                <th class="text-center py-1 px-2">Qty</th>
+                <th class="text-right py-1 px-2">Refund</th>
+                <th class="text-left py-1 px-2">Reason</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white dark:bg-gray-800">${items}</tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }).join('');
+  list.innerHTML = html;
+}
+
+function toggleReturnGroup(btn){
+  const details = btn.nextElementSibling;
+  if (!details) return;
+  const icon = btn.querySelector('i');
+  const hidden = details.classList.contains('hidden');
+  details.classList.toggle('hidden');
+  if (icon) icon.classList.toggle('rotate-180', hidden);
+}
+
+async function reprintReturn(saleId){
+  try {
+    // fetch latest receipt id mapping
+    const resp = await fetch('list_returns.php?sale_id=' + encodeURIComponent(saleId));
+    const parsed = await parseJsonFromResponse(resp);
+    if (!parsed.ok) { alert('Server returned non-JSON'); return; }
+    const data = parsed.data;
+    if (!data.success) { alert(data.message||'Failed to load'); return; }
+    const receiptId = (data.receipts && data.receipts[saleId]) ? data.receipts[saleId] : null;
+    if (!receiptId) { alert('No receipt found for this return yet'); return; }
+    // fetch receipt payload
+    const r = await fetch('return_receipt.php?id=' + encodeURIComponent(receiptId));
+    const parsedR = await parseJsonFromResponse(r);
+    if (!parsedR.ok) { alert('Server returned non-JSON'); return; }
+    const rd = parsedR.data;
+    if (!rd.success) { alert(rd.message||'Failed to load receipt'); return; }
+    printReturnInvoice({ saleId: rd.sale_id, receiptId: receiptId, receipt: rd.receipt });
+  } catch (e) { alert(e.message||'Error'); }
+}
+function closeSalesLookupModal(){ document.getElementById('salesLookupModal').classList.add('hidden'); }
+async function loadRecentSales(){
+  const list = document.getElementById('salesLookupList');
+  list.innerHTML = '<div class="text-gray-500 dark:text-gray-400">Loading...</div>';
+  try {
+    const resp = await fetch('list_sales.php');
+    const parsed = await parseJsonFromResponse(resp);
+    if (!parsed.ok) {
+      console.error('Non-JSON response from list_sales.php:', parsed.text);
+      throw new Error('Server returned non-JSON. Check PHP errors/logs.');
+    }
+    const data = parsed.data;
+    if (!data.success) throw new Error(data.message || 'Failed to load');
+    allSalesCache = Array.isArray(data.sales) ? data.sales : [];
+    renderSalesLookup(allSalesCache);
+    const search = document.getElementById('salesLookupSearch');
+    if (search) {
+      search.oninput = function(){
+        const q = this.value.toLowerCase().trim();
+        const filtered = allSalesCache.filter(s => String(s.id).includes(q) || (s.cashier_name||'').toLowerCase().includes(q) || (s.payment_method||'').toLowerCase().includes(q));
+        renderSalesLookup(filtered);
+      };
+    }
+  } catch (e) {
+    list.innerHTML = '<div class="text-red-600">'+ (e.message || 'Error') +'</div>';
+  }
+}
+function renderSalesLookup(rows){
+  const list = document.getElementById('salesLookupList');
+  if (!rows.length) { list.innerHTML = '<div class="text-gray-500 dark:text-gray-400">No sales found</div>'; return; }
+  list.innerHTML = rows.map(r => `
+    <div class="flex items-center justify-between border-b last:border-b-0 border-gray-200 dark:border-gray-700 py-2">
+      <div class="min-w-0">
+        <div class="font-medium text-gray-900 dark:text-gray-100">#${r.id} • PKR ${(parseFloat(r.final||r.total_amount||0)).toFixed(2)}</div>
+        <div class="text-xs text-gray-500 dark:text-gray-400">${r.created_at || ''} • ${r.cashier_name || ''} • ${String(r.payment_method||'').toUpperCase()}</div>
+      </div>
+      <div class="shrink-0">
+        <button class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs" onclick="selectSaleForReturn(${r.id})"><i class='fas fa-check mr-1'></i>Select</button>
+      </div>
+    </div>
+  `).join('');
+}
+async function selectSaleForReturn(saleId){
+  closeSalesLookupModal();
+  // Open returns and load
+  openReturnsModal();
+  document.getElementById('returnSaleId').value = String(saleId);
+  await loadSaleForReturn();
 }
 
 async function resumeParked(id) {

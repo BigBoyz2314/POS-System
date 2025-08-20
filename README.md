@@ -1,6 +1,8 @@
-# POS System - Point of Sale Web Application
+# Acumen Retail – Point of Sale (POS) Web Application
 
-A complete web-based Point of Sale (POS) system built with PHP, MySQL, and Tailwind CSS. This system is designed to run on cPanel hosting with PHP 8+ and MySQL, featuring robust concurrency handling, comprehensive tax management, and real-time inventory tracking.
+A complete web-based Point of Sale (POS) system built with PHP, MySQL, and Tailwind CSS. This system is designed to run on cPanel hosting with PHP 8+ and MySQL, featuring robust concurrency handling, comprehensive tax management, real-time inventory tracking, and a polished UI/UX.
+
+Branded product name: Acumen Retail
 
 ## Features
 
@@ -42,6 +44,8 @@ A complete web-based Point of Sale (POS) system built with PHP, MySQL, and Tailw
 - **Payment modal** - Clean payment interface
 - Printable thermal printer-optimized invoice
 - **Individual item tax display** - Shows tax amount and rate for each item
+ - **Hold/Resume sales (Parked orders)** - Save a cart with a note and resume later
+ - **Keyboard shortcuts** - Fast operations for search, payment, quantities, park/resume
 
 ### 📈 Reports & Analytics (Admin Only)
 - Daily, weekly, monthly, and custom date range reports
@@ -51,6 +55,21 @@ A complete web-based Point of Sale (POS) system built with PHP, MySQL, and Tailw
 - **Individual item tax breakdown** in invoice display
 - **Always show change amount** - Even when zero for complete transparency
 - Items sold analytics
+
+### 🔄 Returns / Exchanges
+- Line-level returns with specified quantities and reason per line
+- Prevent over-returns with real-time eligibility checks
+- Refund to original tender (cash/card) or a specified split
+- Return invoices printable with duplicate overlay for reprints
+- Returns list view with collapsible details and reprint
+
+### 🧩 UI/UX Enhancements
+- Fixed cart table layout with Sr., Item Name, Desc, Qty, Price, Tax, Total, Action
+- Auto-scroll and highlight to newly added cart items
+- Reduced padding, improved typography, consistent vertical borders
+- Dark mode with proper contrast for cards, tables, inputs, and hover states
+- Font Awesome 7 Pro icons across Dashboard, Products, Vendors, Purchases, Reports, Sales
+- Accessible toasts and skeletons via `assets/ui.css` and `assets/ui.js`
 
 ### 🧾 Vendors (Admin Only)
 - CRUD for vendors
@@ -199,8 +218,15 @@ $database = 'your_database_name';
     ├── purchases.php     # Purchases management
     ├── ajax_search_products.php # AJAX product search
     ├── ajax_get_stock.php       # AJAX stock refresh for concurrency
-    ├── get_sale_details.php     # AJAX sale details for invoice
-    └── get_purchase_details.php # AJAX purchase details
+    ├── ajax_park_sale.php       # Park a sale (save cart with note)
+    ├── ajax_list_parked.php     # List parked sales
+    ├── ajax_get_parked.php      # Retrieve parked sale
+    ├── list_sales.php           # Sales lookup for returns
+    ├── list_returns.php         # Returns lookup
+    ├── ajax_process_return.php  # Process returns
+    ├── return_receipt.php       # Return receipt payload
+    ├── get_sale_details.php     # AJAX sale details for returns
+    └── purchases.php            # Purchases module (AJAX inside file)
 ```
 
 ## Database Schema
@@ -214,6 +240,9 @@ $database = 'your_database_name';
 - **purchase_items**: Items for each purchase (updates stock and influences moving average cost)
 - **sales**: Sales transactions (with discount, tax, and payment breakdown)
 - **sale_items**: Individual items in each sale (with tax rate and tax amount)
+ - **returns**: Line-level returns associated with sales
+ - **refunds**: Refund transactions (cash/card totals per return)
+ - **return_receipts**: Stored payloads for return invoice reprints
 
 ### Cost Price / Moving Average
 - The system stores a `cost_price` on the product and shows an admin-only cost column based on a moving average of recent purchase item prices.
