@@ -20,6 +20,8 @@ if (!$conn) {
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['query'])) {
     $query = trim($_POST['query']);
+    $layout = isset($_POST['layout']) ? strtolower(trim($_POST['layout'])) : 'list';
+    $isGrid = ($layout === 'grid');
     
     // Debug: Log the request
     error_log("AJAX request received: query = '$query'");
@@ -81,50 +83,82 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['query'])) {
             
             if ($is_purchase_page) {
                 // Display for purchase page
-                echo "
-                <div class='p-2 border rounded hover:bg-gray-50 cursor-pointer' onclick='addToPurchaseCart(" . json_encode($product) . ")'>
-                    <div class='flex justify-between items-center'>
-                        <div class='flex-1 min-w-0'>
-                            <div class='flex items-center space-x-1'>
-                                <h3 class='font-medium text-gray-900 text-sm truncate'>" . htmlspecialchars($product['name']) . "</h3>
-                                <span class='text-xs text-gray-400'>|</span>
-                                <span class='text-xs text-gray-500'>" . htmlspecialchars($product['sku']) . "</span>
-                                <span class='text-xs text-gray-400'>|</span>
-                                <span class='text-xs text-gray-500'>" . htmlspecialchars($product['category_name']) . "</span>
+                if ($isGrid) {
+                    echo "
+                    <div class='p-3 border rounded-lg hover:shadow cursor-pointer bg-white dark:bg-gray-800' onclick='addToPurchaseCart(" . json_encode($product) . ")'>
+                        <div class='flex flex-col gap-1'>
+                            <h3 class='font-medium text-gray-900 dark:text-gray-100 text-sm line-clamp-2'>" . htmlspecialchars($product['name']) . "</h3>
+                            <div class='text-xs text-gray-500 dark:text-gray-400'>SKU: " . htmlspecialchars($product['sku']) . "</div>
+                            <div class='text-xs text-gray-500 dark:text-gray-400'>" . htmlspecialchars($product['category_name']) . "</div>
+                        </div>
+                        <div class='flex items-center justify-between mt-2'>
+                            <div class='font-semibold text-gray-900 dark:text-gray-100 text-sm'>PKR " . number_format($avg_cost_price, 2) . "</div>
+                            <span class='text-xs $stock_class'>(" . $product['stock'] . ")</span>
+                        </div>
+                        <div class='text-[10px] text-gray-500 dark:text-gray-400'>avg cost</div>
+                    </div>";
+                } else {
+                    echo "
+                    <div class='p-2 border rounded hover:bg-gray-50 cursor-pointer dark:hover:bg-gray-700' onclick='addToPurchaseCart(" . json_encode($product) . ")'>
+                        <div class='flex justify-between items-center'>
+                            <div class='flex-1 min-w-0'>
+                                <div class='flex items-center space-x-1'>
+                                    <h3 class='font-medium text-gray-900 dark:text-gray-100 text-sm truncate'>" . htmlspecialchars($product['name']) . "</h3>
+                                    <span class='text-xs text-gray-400'>|</span>
+                                    <span class='text-xs text-gray-500 dark:text-gray-300'>" . htmlspecialchars($product['sku']) . "</span>
+                                    <span class='text-xs text-gray-400'>|</span>
+                                    <span class='text-xs text-gray-500 dark:text-gray-300'>" . htmlspecialchars($product['category_name']) . "</span>
+                                </div>
+                            </div>
+                            <div class='text-right flex-shrink-0 ml-2'>
+                                <div class='flex items-center space-x-2'>
+                                    <p class='font-semibold text-gray-900 dark:text-gray-100 text-sm'>PKR " . number_format($avg_cost_price, 2) . "</p>
+                                    <span class='text-xs text-gray-500 dark:text-gray-300'>avg cost</span>
+                                    <span class='text-xs $stock_class'>(" . $product['stock'] . ")</span>
+                                </div>
                             </div>
                         </div>
-                        <div class='text-right flex-shrink-0 ml-2'>
-                            <div class='flex items-center space-x-2'>
-                                <p class='font-semibold text-gray-900 text-sm'>PKR " . number_format($avg_cost_price, 2) . "</p>
-                                <span class='text-xs text-gray-500'>avg cost</span>
-                                <span class='text-xs $stock_class'>(" . $product['stock'] . ")</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>";
+                    </div>";
+                }
             } else {
                 // Display for sales page
-                echo "
-                <div class='p-2 border rounded hover:bg-gray-50 cursor-pointer' onclick='addToCart(" . json_encode($product) . ")'>
-                    <div class='flex justify-between items-center'>
-                        <div class='flex-1 min-w-0'>
-                            <div class='flex items-center space-x-1'>
-                                <h3 class='font-medium text-gray-900 text-sm truncate'>" . htmlspecialchars($product['name']) . "</h3>
-                                <span class='text-xs text-gray-400'>|</span>
-                                <span class='text-xs text-gray-500'>" . htmlspecialchars($product['sku']) . "</span>
-                                <span class='text-xs text-gray-400'>|</span>
-                                <span class='text-xs text-gray-500'>" . htmlspecialchars($product['category_name']) . "</span>
+                if ($isGrid) {
+                    echo "
+                    <div class='p-3 border rounded-lg hover:shadow cursor-pointer bg-white dark:bg-gray-800' onclick='addToCart(" . json_encode($product) . ")'>
+                        <div class='flex flex-col gap-1'>
+                            <h3 class='font-medium text-gray-900 dark:text-gray-100 text-sm line-clamp-2'>" . htmlspecialchars($product['name']) . "</h3>
+                            <div class='text-xs text-gray-500 dark:text-gray-400'>SKU: " . htmlspecialchars($product['sku']) . "</div>
+                            <div class='text-xs text-gray-500 dark:text-gray-400'>" . htmlspecialchars($product['category_name']) . "</div>
+                        </div>
+                        <div class='flex items-center justify-between mt-2'>
+                            <div class='font-semibold text-gray-900 dark:text-gray-100 text-sm'>PKR " . number_format($product['price'], 2) . "</div>
+                            <span class='text-xs $stock_class'>(" . $product['stock'] . ")</span>
+                        </div>
+                        <div class='text-[10px] text-gray-500 dark:text-gray-400'>inc. tax</div>
+                    </div>";
+                } else {
+                    echo "
+                    <div class='p-2 border rounded hover:bg-gray-50 cursor-pointer dark:hover:bg-gray-700' onclick='addToCart(" . json_encode($product) . ")'>
+                        <div class='flex justify-between items-center'>
+                            <div class='flex-1 min-w-0'>
+                                <div class='flex items-center space-x-1'>
+                                    <h3 class='font-medium text-gray-900 dark:text-gray-100 text-sm truncate'>" . htmlspecialchars($product['name']) . "</h3>
+                                    <span class='text-xs text-gray-400'>|</span>
+                                    <span class='text-xs text-gray-500 dark:text-gray-300'>" . htmlspecialchars($product['sku']) . "</span>
+                                    <span class='text-xs text-gray-400'>|</span>
+                                    <span class='text-xs text-gray-500 dark:text-gray-300'>" . htmlspecialchars($product['category_name']) . "</span>
+                                </div>
+                            </div>
+                            <div class='text-right flex-shrink-0 ml-2'>
+                                <div class='flex items-center space-x-2'>
+                                    <p class='font-semibold text-gray-900 dark:text-gray-100 text-sm'>PKR " . number_format($product['price'], 2) . "</p>
+                                    <span class='text-xs text-gray-500 dark:text-gray-300'>inc. tax</span>
+                                    <span class='text-xs $stock_class'>(" . $product['stock'] . ")</span>
+                                </div>
                             </div>
                         </div>
-                        <div class='text-right flex-shrink-0 ml-2'>
-                            <div class='flex items-center space-x-2'>
-                                <p class='font-semibold text-gray-900 text-sm'>PKR " . number_format($product['price'], 2) . "</p>
-                                <span class='text-xs text-gray-500'>inc. tax</span>
-                                <span class='text-xs $stock_class'>(" . $product['stock'] . ")</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>";
+                    </div>";
+                }
             }
         }
     } else {

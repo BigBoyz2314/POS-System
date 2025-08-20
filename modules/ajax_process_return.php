@@ -80,7 +80,7 @@ try {
 
     // Pre-validate all items and compute totals BEFORE any write
     $prepared = [];
-    $total_refund = 0.0;
+    $total_refund_cents = 0;
     foreach ($items as $i) {
         $sale_item_id = isset($i['sale_item_id']) ? intval($i['sale_item_id']) : 0;
         $product_id = isset($i['product_id']) ? intval($i['product_id']) : 0;
@@ -125,8 +125,9 @@ try {
 
         // Unit price in sale_items is tax-inclusive in this app
         $unit_refund = floatval($si['price']);
-        $line_refund = $unit_refund * $qty;
-        $total_refund += $line_refund;
+        $line_refund = round($unit_refund * $qty, 2);
+        $line_refund_cents = (int) round($line_refund * 100);
+        $total_refund_cents += $line_refund_cents;
         $prepared[] = [
             'sale_item_id' => intval($si['id']),
             'product_id' => intval($si['product_id']),
@@ -138,9 +139,9 @@ try {
     }
 
     // Validate refund method and compute final refund split BEFORE any writes
-    if ($refund_method === 'cash') { $cash_refund = $refund_cash; $card_refund = 0.0; }
-    else if ($refund_method === 'card') { $cash_refund = 0.0; $card_refund = $refund_card; }
-    else if ($refund_method === 'mixed') { $cash_refund = $refund_cash; $card_refund = $refund_card; }
+    if ($refund_method === 'cash') { $cash_refund = round($refund_cash, 2); $card_refund = 0.0; }
+    else if ($refund_method === 'card') { $cash_refund = 0.0; $card_refund = round($refund_card, 2); }
+    else if ($refund_method === 'mixed') { $cash_refund = round($refund_cash, 2); $card_refund = round($refund_card, 2); }
     else {
         // If unknown, fall back proportionally to original payment split
         $total_paid = floatval($sale['cash_amount']) + floatval($sale['card_amount']);
@@ -156,7 +157,9 @@ try {
             $cash_refund = $total_refund; $card_refund = 0.0;
         }
     }
-    if (abs(($cash_refund + $card_refund) - $total_refund) > 0.01) {
+    $total_refund = round($total_refund_cents / 100, 2);
+    $input_cents = (int) round(($cash_refund + $card_refund) * 100);
+    if ($input_cents !== $total_refund_cents) {
         throw new Exception('Refund amounts do not match total refund');
     }
 
@@ -191,6 +194,7 @@ try {
             'quantity' => $p['qty'],
             'unit_price' => $p['unit_refund'],
             'line_total' => $p['line_refund'],
+            'tax_rate' => isset($si['tax_rate']) ? floatval($si['tax_rate']) : 0,
             'reason' => $p['reason']
         ];
     }

@@ -188,9 +188,14 @@ include '../includes/header.php';
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-10 gap-3 sm:gap-6 h-full">
         <!-- Product Search and Selection -->
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 sm:p-4 flex flex-col min-h-0 md:col-span-1 lg:col-span-5">
-            <h2 class="text-xl font-semibold text-gray-900 mb-4">
-                <i class="fas fa-search mr-2"></i>Product Search
-            </h2>
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-semibold text-gray-900">
+                    <i class="fas fa-search mr-2"></i>Product Search
+                </h2>
+                <button id="toggleLayoutBtn" class="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white p-2" title="Toggle layout">
+                    <i class="fas fa-th-large"></i>
+                </button>
+            </div>
             
             <div class="mb-3 sm:mb-4">
                 <div class="relative">
@@ -508,6 +513,7 @@ let headerHidden = false;
 let currentReturn = { sale: null, items: [] };
 let allSalesCache = [];
 let allReturnsCache = [];
+
 let returnAutofillLocked = false;
 
 // Save cart to localStorage
@@ -713,9 +719,7 @@ function updateReturnRefund(idx){
   if (qtyLabel) qtyLabel.textContent = String(qty);
   entry.returnQty = qty;
   entry.reason = (reasonEl.value||'').trim();
-  const taxMultiplier = entry.tax_rate > 0 ? (1 + entry.tax_rate/100) : 1;
-  const unitTotal = entry.price * taxMultiplier;
-  const refund = unitTotal * qty;
+  const refund = entry.price * qty; // price is tax-inclusive in sale_items
   refundEl.textContent = 'PKR ' + refund.toFixed(2);
   updateTotalRefund();
 }
@@ -729,19 +733,17 @@ function changeReturnQty(idx, delta){
   updateReturnRefund(idx);
 }
 function updateTotalRefund(){
-  const total = currentReturn.items.reduce((s,it)=>{
-    const taxMultiplier = it.tax_rate > 0 ? (1 + it.tax_rate/100) : 1;
-    return s + (it.returnQty * it.price * taxMultiplier);
-  }, 0);
+  const total = currentReturn.items.reduce((s,it)=> s + (it.returnQty * it.price), 0);
   document.getElementById('totalRefund').textContent = 'PKR ' + total.toFixed(2);
   const expected = document.getElementById('expectedRefundLabel');
   if (expected) expected.textContent = 'PKR ' + total.toFixed(2);
   const section = document.getElementById('returnRefundSection');
   if (section) section.classList.remove('hidden');
   if (!returnAutofillLocked) { autofillReturnAmounts(); }
-  const any = currentReturn.items.some(it => it.returnQty > 0 && it.reason.length > 0);
+  const hasAny = currentReturn.items.some(it => it.returnQty > 0);
+  const allHaveReasons = currentReturn.items.every(it => it.returnQty === 0 || (it.reason && it.reason.length > 0));
   const btn = document.getElementById('processReturnBtn');
-  if (btn) btn.disabled = !any || !isRefundAmountsValid(total);
+  if (btn) btn.disabled = !(hasAny && allHaveReasons && isRefundAmountsValid(total));
 }
 function updateRefundInputsSection(){
   const method = document.getElementById('refundMethodReturn').value;
@@ -764,11 +766,11 @@ function isRefundAmountsValid(expected){
 }
 function validateReturnSubmission(){
   // Re-evaluate total and enable
-  const total = (function(){
-    let s = 0; currentReturn.items.forEach(it=>{ const m = it.tax_rate>0?(1+it.tax_rate/100):1; s += it.returnQty*it.price*m; }); return s; })();
+  const total = (function(){ let s = 0; currentReturn.items.forEach(it=>{ s += it.returnQty * it.price; }); return s; })();
   const btn = document.getElementById('processReturnBtn');
-  const any = currentReturn.items.some(it => it.returnQty > 0 && it.reason.length > 0);
-  if (btn) btn.disabled = !any || !isRefundAmountsValid(total);
+  const hasAny = currentReturn.items.some(it => it.returnQty > 0);
+  const allHaveReasons = currentReturn.items.every(it => it.returnQty === 0 || (it.reason && it.reason.length > 0));
+  if (btn) btn.disabled = !(hasAny && allHaveReasons && isRefundAmountsValid(total));
 }
 function autofillReturnAmounts(){
   // Set refund inputs to match expected total and method
@@ -823,20 +825,27 @@ function printReturnInvoice({ saleId, receiptId, receipt }){
     const now = new Date();
     const currentDate = now.toLocaleDateString();
     const currentTime = now.toLocaleTimeString();
-    const itemsHTML = (receipt.items||[]).map(it => `
+    const itemsHTML = (receipt.items||[]).map(it => {
+      const rate = parseFloat(it.tax_rate||0) || 0;
+      const lineTotal = parseFloat(it.line_total||0) || 0;
+      const base = rate > 0 ? (lineTotal / (1 + rate/100)) : lineTotal;
+      const tax = lineTotal - base;
+      const taxHtml = rate > 0 && Math.abs(tax) >= 0.005 ? ` <span style="float:right;">Tax: PKR ${tax.toFixed(2)} (${rate.toFixed(2)}%)</span>` : '';
+      return `
       <tr class="border-b">
         <td class="py-1 text-left text-xs" style="padding: 2px; font-size: 12px;">${it.name || ('#'+it.product_id)}</td>
         <td class="py-1 text-center text-xs" style="padding: 2px; font-size: 12px;">${it.quantity}</td>
         <td class="py-1 text-right text-xs" style="padding: 2px; font-size: 12px;">${(parseFloat(it.unit_price)||0).toFixed(2)}</td>
-        <td class="py-1 text-right text-xs" style="padding: 2px; font-size: 12px;">${(parseFloat(it.line_total)||0).toFixed(2)}</td>
+        <td class="py-1 text-right text-xs" style="padding: 2px; font-size: 12px;">${lineTotal.toFixed(2)}</td>
       </tr>
-      <tr><td colspan="4" class="py-0 text-left text-xs" style="padding: 1px 2px; font-size: 10px; color: #666;">Reason: ${it.reason||''}</td></tr>
+      <tr><td colspan="4" class="py-0 text-left text-xs" style="padding: 1px 2px; font-size: 10px; color: #666;">Reason: ${it.reason||''}${taxHtml}</td></tr>
       <tr>
         <td colspan="4" class="py-0" style="padding: 0; font-size: 10px; color: #666;">
           <div style="border-bottom: 1px solid #eee; margin: 1px 0;"></div>
         </td>
       </tr>
-    `).join('');
+      `;
+    }).join('');
 
     const html = '<!DOCTYPE html>' +
       '<html><head><title>Return Invoice</title>' +
@@ -1127,12 +1136,18 @@ function loadAllProducts() {
     $.ajax({
         url: 'ajax_search_products.php',
         method: 'POST',
-        data: { query: '' },
+        data: { query: '', layout: (localStorage.getItem('productLayout')||'list') },
         success: function(response) {
             console.log('Products loaded successfully');
             console.log('Response length:', response.length);
             console.log('Response preview:', response.substring(0, 200));
-            document.getElementById('searchResults').innerHTML = response;
+            const isGrid = (localStorage.getItem('productLayout')||'list') === 'grid';
+            const wrap = document.getElementById('searchResults');
+            wrap.classList.toggle('grid', isGrid);
+            wrap.classList.toggle('grid-cols-3', isGrid);
+            wrap.classList.toggle('gap-2', isGrid);
+            wrap.classList.toggle('p-2', true);
+            wrap.innerHTML = response;
         },
         error: function(xhr, status, error) {
             console.error('Error loading products:', error);
@@ -1770,9 +1785,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 $.ajax({
                     url: 'ajax_search_products.php',
                     method: 'POST',
-                    data: { query: query },
+                    data: { query: query, layout: (localStorage.getItem('productLayout')||'list') },
                     success: function(response) {
-                        document.getElementById('searchResults').innerHTML = response;
+                        const isGrid = (localStorage.getItem('productLayout')||'list') === 'grid';
+                        const wrap = document.getElementById('searchResults');
+                        wrap.classList.toggle('grid', isGrid);
+                        wrap.classList.toggle('grid-cols-3', isGrid);
+                        wrap.classList.toggle('gap-2', isGrid);
+                        wrap.classList.toggle('p-2', true);
+                        wrap.innerHTML = response;
                     },
                     error: function() {
                         document.getElementById('searchResults').innerHTML = '<p class="text-red-600">Error searching products.</p>';
@@ -1812,6 +1833,43 @@ document.addEventListener('DOMContentLoaded', function() {
         // Delete: remove last item
         if (e.key === 'Delete' || e.key === 'Backspace') { if (!cart.length) return; e.preventDefault(); updateQuantity(cart.length-1, -cart[cart.length-1].quantity); return; }
     });
+
+    // Reverted splitter; no init
+
+    // Product layout toggle
+    const toggleLayoutBtn = document.getElementById('toggleLayoutBtn');
+    const applyLayout = function(){
+      const isGrid = (localStorage.getItem('productLayout')||'list') === 'grid';
+      const wrap = document.getElementById('searchResults');
+      if (!wrap) return;
+      // Tailwind classes
+      wrap.classList.toggle('grid', isGrid);
+      wrap.classList.toggle('grid-cols-3', isGrid);
+      wrap.classList.toggle('gap-2', isGrid);
+      wrap.classList.toggle('p-2', true);
+      // Inline fallback to guarantee 3 columns
+      if (isGrid) {
+        wrap.style.display = 'grid';
+        wrap.style.gridTemplateColumns = 'repeat(3, minmax(0, 1fr))';
+        wrap.style.gap = '0.5rem';
+      } else {
+        wrap.style.display = '';
+        wrap.style.gridTemplateColumns = '';
+        wrap.style.gap = '';
+      }
+      if (toggleLayoutBtn) {
+        toggleLayoutBtn.innerHTML = isGrid ? '<i class="fas fa-list"></i>' : '<i class="fas fa-th-large"></i>';
+        toggleLayoutBtn.title = isGrid ? 'List layout' : 'Grid layout';
+      }
+    };
+    if (!localStorage.getItem('productLayout')) localStorage.setItem('productLayout','list');
+    applyLayout();
+    if (toggleLayoutBtn) toggleLayoutBtn.onclick = function(){
+      const curr = localStorage.getItem('productLayout')||'list';
+      localStorage.setItem('productLayout', curr === 'grid' ? 'list' : 'grid');
+      applyLayout();
+      loadAllProducts();
+    };
 });
 
 // Check if there's a successful sale to show invoice
