@@ -23,15 +23,11 @@ interface SaleReturn {
   created_at: string;
 }
 
-interface ReturnReceipt {
-  id: number;
-  sale_id: number;
-  payload: any;
-}
+
 
 const Returns: React.FC = () => {
   const { isAuthenticated, loading: authLoading } = useAuth();
-  const [returns, setReturns] = useState<ReturnItem[]>([]);
+
   const [sales, setSales] = useState<SaleReturn[]>([]);
   const [receipts, setReceipts] = useState<{[key: number]: number}>({});
   const [loading, setLoading] = useState(true);
@@ -54,7 +50,7 @@ const Returns: React.FC = () => {
       const response = await api.get(`list_returns.php${params}`);
       
       if (response.data.success) {
-        setReturns(response.data.returns);
+
         setSales(response.data.sales || []);
         setReceipts(response.data.receipts || {});
       }

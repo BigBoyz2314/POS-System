@@ -12,7 +12,7 @@ interface Vendor {
 }
 
 const Vendors: React.FC = () => {
-  const { user } = useAuth();
+  const { } = useAuth();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');

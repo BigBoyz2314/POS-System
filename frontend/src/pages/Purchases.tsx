@@ -53,7 +53,7 @@ interface CartItem {
 }
 
 const Purchases: React.FC = () => {
-  const { user } = useAuth();
+  const { } = useAuth();
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [products, setProducts] = useState<Product[]>([]);

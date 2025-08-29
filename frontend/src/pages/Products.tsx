@@ -21,7 +21,7 @@ interface Category {
 }
 
 const Products: React.FC = () => {
-  const { user } = useAuth();
+  const { } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);

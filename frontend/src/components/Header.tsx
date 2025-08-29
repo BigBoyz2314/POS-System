@@ -7,7 +7,7 @@ const Header: React.FC = () => {
   const [isDark, setIsDark] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const { user, logout } = useAuth()
-  const { showHeader, toggleHeader } = useHeader()
+  const { } = useHeader()
   const navigate = useNavigate()
   const location = useLocation()
 
