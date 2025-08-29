@@ -1,24 +1,14 @@
+Options -Indexes
 RewriteEngine On
 
-# Do not rewrite API calls
+# Handle API calls
 RewriteCond %{REQUEST_URI} ^/api [NC]
 RewriteRule ^ - [L]
 
-# Serve existing files directly
+# Serve existing files
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
 
-# SPA fallback to index.html
+# SPA fallback
 RewriteRule ^ index.html [L]
-
-# Security headers
-Header always set X-Content-Type-Options nosniff
-Header always set X-Frame-Options DENY
-Header always set X-XSS-Protection "1; mode=block"
-
-# Cache static assets
-<FilesMatch "\.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$">
-    ExpiresActive On
-    ExpiresDefault "access plus 1 year"
-</FilesMatch>
