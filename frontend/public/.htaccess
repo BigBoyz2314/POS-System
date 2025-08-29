@@ -1,10 +1,7 @@
 RewriteEngine On
 
-# Adjust base if your app is served from a subdirectory like /POS system/
-# RewriteBase /POS system/
-
 # Do not rewrite API calls
-RewriteCond %{REQUEST_URI} ^/POS%20system/api [NC]
+RewriteCond %{REQUEST_URI} ^/api [NC]
 RewriteRule ^ - [L]
 
 # Serve existing files directly
@@ -14,13 +11,6 @@ RewriteRule ^ - [L]
 
 # SPA fallback to index.html
 RewriteRule ^ index.html [L]
-
-RewriteEngine On
-
-# Handle Angular and React Router
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ /index.html [L]
 
 # Security headers
 Header always set X-Content-Type-Options nosniff
