@@ -1,7 +1,36 @@
 ---
 deployment:
   tasks:
+    - export NODE_OPTIONS=--max_old_space_size=512
+    - 'echo "Starting deployment to: ${DEPLOYPATH:-public_html/pos.theacumentechnologies.com}"'
+    - 'test -n "${DEPLOYPATH:-public_html/pos.theacumentechnologies.com}" || (echo "DEPLOYPATH is not set" && exit 1)'
+
+    # Ensure target directories exist
+    - '/bin/mkdir -p "${DEPLOYPATH:-public_html/pos.theacumentechnologies.com}"'
+    - '/bin/mkdir -p "${DEPLOYPATH:-public_html/pos.theacumentechnologies.com}/api"'
+    - '/bin/mkdir -p "${DEPLOYPATH:-public_html/pos.theacumentechnologies.com}/includes"'
+
+    # Build React frontend
+    - 'cd frontend && /bin/npm ci --no-audit --no-fund && /bin/npm run build'
+
+    # Sync frontend build to document root (includes .htaccess from public)
+    - '/bin/rsync -a --delete frontend/dist/ "${DEPLOYPATH:-public_html/pos.theacumentechnologies.com}/"'
+
+    # Sync PHP API and includes
+    - '/bin/rsync -a api/ "${DEPLOYPATH:-public_html/pos.theacumentechnologies.com}/api/"'
+    - '/bin/rsync -a includes/ "${DEPLOYPATH:-public_html/pos.theacumentechnologies.com}/includes/"'
+
+    # Tighten permissions (optional, keep simple)
+    - '/bin/find "${DEPLOYPATH:-public_html/pos.theacumentechnologies.com}" -type d -exec chmod 755 {} \;'
+    - '/bin/find "${DEPLOYPATH:-public_html/pos.theacumentechnologies.com}" -type f -exec chmod 644 {} \;'
+
+    - 'echo "Deployment completed."'
+
+---
+deployment:
+  tasks:
     - export DEPLOYPATH=${DEPLOYPATH:-public_html/pos.theacumentechnologies.com}
+    - cd frontend && npm run build
     - /bin/rsync -avr --delete \
         --exclude='.git' \
         --exclude='node_modules' \
@@ -9,4 +38,7 @@ deployment:
         --exclude='.env' \
         --exclude='*.log' \
         --exclude='.gitignore' \
+        --exclude='frontend' \
         ./ "$DEPLOYPATH/"
+    - /bin/rsync -avr --delete \
+        frontend/dist/ "$DEPLOYPATH/"

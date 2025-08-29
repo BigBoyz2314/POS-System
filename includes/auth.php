@@ -1,4 +1,9 @@
 <?php
+// Start session if not already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 // Check if user is logged in
 function isLoggedIn() {
     return isset($_SESSION['user_id']);
@@ -17,12 +22,14 @@ function isCashier() {
 // Require admin access
 function requireAdmin() {
     if (!isLoggedIn()) {
-        header('Location: login.php');
+        http_response_code(401);
+        echo json_encode(['error' => 'Authentication required']);
         exit();
     }
     
     if (!isAdmin()) {
-        header('Location: index.php');
+        http_response_code(403);
+        echo json_encode(['error' => 'Admin access required']);
         exit();
     }
 }
@@ -30,7 +37,8 @@ function requireAdmin() {
 // Require login
 function requireLogin() {
     if (!isLoggedIn()) {
-        header('Location: login.php');
+        http_response_code(401);
+        echo json_encode(['error' => 'Authentication required']);
         exit();
     }
 }

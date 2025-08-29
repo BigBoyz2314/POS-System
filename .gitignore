@@ -1,30 +1,36 @@
-# Dependencies and build outputs
-node_modules/
-vendor/
-assets/tailwind.css.map
-assets/tailwind.css
+# Node / frontend
+frontend/node_modules/
+frontend/.vite/
+frontend/dist/
+frontend/.env*
 
-# Environment and secrets
-.env
-.env.*
-*.local
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
 
-# OS and editor files
+# Editor / OS
 .DS_Store
 Thumbs.db
-*.log
 .idea/
 .vscode/
-.fleet/
 
-# Caches and temp
-.tmp/
-.cache/
+# Build caches
+*.cache
 
+# PHP / server
+/vendor/
+composer.lock
+*.sql
+*.sqlite
+*.bak
+*.old
 
-# OS trash and archives
-**/.Trash
-*.zip
-*.tar.gz
+# Env / secrets
+.env
+.env.local
+**/.env
 
 
