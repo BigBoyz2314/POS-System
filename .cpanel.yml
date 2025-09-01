@@ -10,11 +10,8 @@ deployment:
     - '/bin/mkdir -p "${DEPLOYPATH:-public_html/pos.theacumentechnologies.com}/api"'
     - '/bin/mkdir -p "${DEPLOYPATH:-public_html/pos.theacumentechnologies.com}/includes"'
 
-    # Build React frontend
-    - 'cd frontend && /bin/npm ci --no-audit --no-fund && /bin/npm run build'
-
-    # Sync frontend build to document root (includes .htaccess from public)
-    - '/bin/rsync -a --delete frontend/dist/ "${DEPLOYPATH:-public_html/pos.theacumentechnologies.com}/"'
+    # Sync React build files from root (already built locally)
+    - '/bin/rsync -a --delete --exclude=".git" --exclude="node_modules" --exclude="frontend" --exclude="*.yml" --exclude="*.md" --exclude="*.sql" --exclude="*.js" --exclude="*.config.js" --exclude="package*" . "${DEPLOYPATH:-public_html/pos.theacumentechnologies.com}/"'
 
     # Sync PHP API and includes
     - '/bin/rsync -a api/ "${DEPLOYPATH:-public_html/pos.theacumentechnologies.com}/api/"'
