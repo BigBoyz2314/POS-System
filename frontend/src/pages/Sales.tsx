@@ -299,6 +299,21 @@ export default function Sales() {
   const addToCart = (product: Product) => {
     setCart(prevCart => {
       const existingItem = prevCart.find(item => item.product.id === product.id)
+      const currentQuantityInCart = existingItem ? existingItem.quantity : 0
+      const newQuantity = currentQuantityInCart + 1
+      
+      // Check if adding this item would exceed available stock
+      if (newQuantity > product.stock) {
+        // Show low stock alert
+        const remainingStock = product.stock - currentQuantityInCart
+        if (remainingStock <= 0) {
+          alert(`⚠️ Out of Stock!\n\n"${product.name}" is currently out of stock.\nAvailable: ${product.stock}\nIn cart: ${currentQuantityInCart}`)
+        } else {
+          alert(`⚠️ Low Stock Alert!\n\n"${product.name}" has limited stock remaining.\nAvailable: ${product.stock}\nIn cart: ${currentQuantityInCart}\nRemaining: ${remainingStock}`)
+        }
+        return prevCart // Don't add to cart
+      }
+      
       let addedItemIndex = -1
       
       if (existingItem) {
@@ -372,13 +387,29 @@ export default function Sales() {
       removeFromCart(productId)
       return
     }
-    setCart(prevCart =>
-      prevCart.map(item =>
+    
+    setCart(prevCart => {
+      const cartItem = prevCart.find(item => item.product.id === productId)
+      if (!cartItem) return prevCart
+      
+      // Check if new quantity exceeds available stock
+      if (quantity > cartItem.product.stock) {
+        alert(`⚠️ Low Stock Alert!\n\n"${cartItem.product.name}" has limited stock.\nAvailable: ${cartItem.product.stock}\nRequested: ${quantity}\n\nQuantity has been set to maximum available stock.`)
+        // Set to maximum available stock
+        return prevCart.map(item =>
+          item.product.id === productId
+            ? { ...item, quantity: cartItem.product.stock }
+            : item
+        )
+      }
+      
+      return prevCart.map(item =>
         item.product.id === productId
           ? { ...item, quantity }
           : item
       )
-    )
+    })
+    
     // Clear highlight when quantity is manually updated
     setNewlyAddedItems(prev => {
       const newSet = new Set(prev)
