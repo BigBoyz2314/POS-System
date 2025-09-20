@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import api from '../services/api';
+import { useConfirm } from '../contexts/ConfirmContext';
 
 interface Purchase {
   id: number;
@@ -42,6 +43,8 @@ interface Product {
   cost_price: number;
   avg_cost_price: number;
   stock: number;
+  barcode?: string;
+  category_name?: string;
 }
 
 interface CartItem {
@@ -54,6 +57,7 @@ interface CartItem {
 
 const Purchases: React.FC = () => {
   const { } = useAuth();
+  const { confirm } = useConfirm();
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -63,6 +67,7 @@ const Purchases: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showControlsModal, setShowControlsModal] = useState(false);
+  const [layoutMode, setLayoutMode] = useState<'grid' | 'list'>('grid');
   const [selectedPurchase, setSelectedPurchase] = useState<PurchaseDetails | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [purchaseCart, setPurchaseCart] = useState<CartItem[]>([]);
@@ -256,9 +261,13 @@ const Purchases: React.FC = () => {
   };
 
   const handleDeletePurchase = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this purchase? This will reverse the stock changes.')) {
-      return;
-    }
+    const ok = await confirm({
+      title: 'Delete purchase?',
+      message: 'This will reverse stock changes.',
+      confirmText: 'Delete',
+      danger: true,
+    });
+    if (!ok) return;
 
     try {
       const response = await api.post('purchases_management.php', {
@@ -298,10 +307,15 @@ const Purchases: React.FC = () => {
     setShowAddModal(true);
   };
 
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.sku.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const searchIndex = (p: Product) => (
+    (p.name || '') + ' ' + (p.sku || '') + ' ' + (p.barcode || '') + ' ' + (p.category_name || '')
+  ).toLowerCase();
+
+  const filteredProducts = products.filter(product => {
+    const q = (searchQuery || '').toLowerCase().trim();
+    if (!q) return true;
+    return searchIndex(product).includes(q);
+  });
 
   if (loading) {
     return (
@@ -409,7 +423,7 @@ const Purchases: React.FC = () => {
 
       {/* Add Purchase Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-gray-900/60 overflow-y-auto h-full w-full modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowAddModal(false) }}>
+        <div className="fixed inset-0 z-[2000] bg-gray-900/60 overflow-y-auto h-full w-full modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowAddModal(false) }}>
           <div className="relative top-5 mx-auto p-4 sm:p-5 border w-full max-w-6xl shadow-lg rounded-md bg-white dark:bg-gray-800 dark:text-gray-100 modal-panel" onClick={(e) => e.stopPropagation()}>
             <div className="mt-3">
               <div className="flex items-center justify-between mb-4">
@@ -428,9 +442,30 @@ const Purchases: React.FC = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                 {/* Product Search and Selection */}
                 <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
-                  <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                    <i className="fas fa-search mr-2"></i>Product Search
-                  </h4>
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100">
+                      <i className="fas fa-search mr-2"></i>Product Search
+                    </h4>
+                    <button
+                      className="relative inline-flex w-24 h-8 items-center rounded-full bg-gray-200 dark:bg-gray-700 transition-colors"
+                      title="Toggle layout"
+                      onClick={() => setLayoutMode(l => l === 'grid' ? 'list' : 'grid')}
+                    >
+                      <div className="absolute inset-0 flex z-0">
+                        <div className="w-1/2 flex items-center justify-center">
+                          <i className="fas fa-th-large text-sm text-gray-700 dark:text-gray-300 opacity-60"></i>
+                        </div>
+                        <div className="w-1/2 flex items-center justify-center">
+                          <i className="fas fa-list text-sm text-gray-700 dark:text-gray-300 opacity-60"></i>
+                        </div>
+                      </div>
+                      <span
+                        className={`absolute top-1 left-1 h-6 w-10 rounded-full bg-blue-600 transition-transform z-10 ${layoutMode === 'grid' ? 'translate-x-0' : 'translate-x-12'} flex items-center justify-center text-white`}
+                      >
+                        <i className={`fas ${layoutMode === 'grid' ? 'fa-th-large' : 'fa-list'} text-xs`}></i>
+                      </span>
+                    </button>
+                  </div>
                   
                   <div className="mb-3 sm:mb-4">
                     <div className="relative">
@@ -438,9 +473,39 @@ const Purchases: React.FC = () => {
                       <input 
                         ref={searchInputRef}
                         type="text" 
-                        placeholder="Search by product name or SKU..." 
+                        placeholder="Search by name, SKU, barcode or category..." 
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            const term = (searchQuery || '').trim().toLowerCase();
+                            const onlyOne = filteredProducts.length === 1 ? filteredProducts[0] : null;
+                            if (onlyOne) {
+                              addToCart(onlyOne);
+                              setSearchQuery('');
+                              return;
+                            }
+                            const bySku = products.find(p => (p.sku || '').toLowerCase() === term);
+                            if (bySku) {
+                              addToCart(bySku);
+                              setSearchQuery('');
+                              return;
+                            }
+                            const byBarcode = products.find(p => ((p.barcode || '') as string).toLowerCase() === term);
+                            if (byBarcode) {
+                              addToCart(byBarcode);
+                              setSearchQuery('');
+                              return;
+                            }
+                            const byName = products.find(p => (p.name || '').toLowerCase() === term);
+                            if (byName) {
+                              addToCart(byName);
+                              setSearchQuery('');
+                              return;
+                            }
+                          }
+                        }}
                         className="w-full pl-8 sm:pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                       />
                     </div>
@@ -448,25 +513,51 @@ const Purchases: React.FC = () => {
                   
                   <div className="overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-md p-2 h-64">
                     {filteredProducts.length > 0 ? (
-                      <div className="grid grid-cols-1 gap-2">
-                        {filteredProducts.map((product) => (
-                          <button
-                            key={product.id}
-                            onClick={() => addToCart(product)}
-                            className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow cursor-pointer bg-white dark:bg-gray-800 text-left"
-                          >
-                            <div className="flex flex-col gap-1">
-                              <h3 className="font-medium text-gray-900 dark:text-gray-100 text-sm line-clamp-2">{product.name}</h3>
-                              <div className="text-xs text-gray-500 dark:text-gray-400">SKU: {product.sku}</div>
-                              <div className="text-xs text-gray-500 dark:text-gray-400">Stock: {product.stock}</div>
-                            </div>
-                            <div className="flex items-center justify-between mt-2">
-                              <div className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
-                                Rs. {(product.avg_cost_price || product.cost_price || 0).toFixed(2)}
+                      <div className={layoutMode === 'grid' ? 'grid grid-cols-2 sm:grid-cols-3 gap-2' : 'grid grid-cols-1 gap-2'}>
+                        {filteredProducts.map((product) => {
+                          const price = (product.avg_cost_price || product.cost_price || 0).toFixed(2)
+                          const stockBadge = (() => {
+                            const base = 'inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium'
+                            const cls = product.stock <= 5 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+                              : product.stock <= 20 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
+                              : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                            return <span className={`${base} ${cls}`}>{product.stock <= 0 ? 'Out' : product.stock}</span>
+                          })()
+                          if (layoutMode === 'grid') {
+                            return (
+                              <button
+                                key={product.id}
+                                onClick={() => addToCart(product)}
+                                className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow cursor-pointer bg-white dark:bg-gray-800 text-left"
+                              >
+                                <div className="space-y-1">
+                                  <h3 className="font-medium text-gray-900 dark:text-gray-100 text-sm line-clamp-2">{product.name}</h3>
+                                  <div className="text-xs text-gray-500 dark:text-gray-400">SKU: {product.sku}</div>
+                                  <div className="flex items-center justify-between mt-2">
+                                    <div className="font-semibold text-gray-900 dark:text-gray-100 text-sm">Rs. {price}</div>
+                                    {stockBadge}
+                                  </div>
+                                </div>
+                              </button>
+                            )
+                          }
+                          return (
+                            <button
+                              key={product.id}
+                              onClick={() => addToCart(product)}
+                              className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow cursor-pointer bg-white dark:bg-gray-800 text-left"
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="text-sm text-gray-900 dark:text-gray-100 truncate">
+                                  <span className="font-medium">{product.name}</span>
+                                  <span className="text-gray-500 dark:text-gray-400 ml-2">SKU: {product.sku}</span>
+                                  <span className="ml-2">Rs. {price}</span>
+                                </div>
+                                {stockBadge}
                               </div>
-                            </div>
-                          </button>
-                        ))}
+                            </button>
+                          )
+                        })}
                       </div>
                     ) : (
                       <p className="text-gray-500 dark:text-gray-400 text-center py-8">No products found</p>

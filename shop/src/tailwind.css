@@ -1,0 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Reuse app theme: will pick up SettingsContext values via DOM classes later */
+
+

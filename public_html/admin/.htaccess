@@ -1,0 +1,26 @@
+Options -MultiViews
+RewriteEngine On
+
+# Serve existing files and directories as-is
+RewriteCond %{REQUEST_URI} ^/api/ [OR]
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Single Page App fallback for POS under /admin
+RewriteRule ^ index.html [L]
+
+Options -Indexes
+RewriteEngine On
+
+# Handle API calls
+RewriteCond %{REQUEST_URI} ^/api [NC]
+RewriteRule ^ - [L]
+
+# Serve existing files
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# SPA fallback
+RewriteRule ^ index.html [L]

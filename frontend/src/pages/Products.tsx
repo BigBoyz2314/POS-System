@@ -2,17 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import api from '../services/api';
 import { TableRowSkeleton } from '../components/Skeleton';
+import { useConfirm } from '../contexts/ConfirmContext';
 
 interface Product {
   id: number;
   name: string;
   sku: string;
+  barcode?: string;
   category_name: string;
   price: number;
   tax_rate: number;
   avg_cost_price: number;
   stock: number;
   category_id: number;
+  is_published?: number;
+  featured?: number;
 }
 
 interface Category {
@@ -22,6 +26,7 @@ interface Category {
 
 const Products: React.FC = () => {
   const { } = useAuth();
+  const { confirm } = useConfirm();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,6 +38,7 @@ const Products: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
     sku: '',
+    barcode: '',
     category_id: '',
     price: '',
     cost_price: '0.00',
@@ -79,6 +85,7 @@ const Products: React.FC = () => {
     setFormData({
       name: '',
       sku: '',
+      barcode: '',
       category_id: '',
       price: '',
       cost_price: '0.00',
@@ -138,9 +145,13 @@ const Products: React.FC = () => {
   };
 
   const handleDeleteProduct = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this product?')) {
-      return;
-    }
+    const ok = await confirm({
+      title: 'Delete product?',
+      message: 'This action cannot be undone.',
+      confirmText: 'Delete',
+      danger: true,
+    });
+    if (!ok) return;
 
     try {
       const response = await api.post('products_management.php', {
@@ -165,6 +176,7 @@ const Products: React.FC = () => {
     setFormData({
       name: product.name,
       sku: product.sku,
+      barcode: product.barcode || '',
       category_id: product.category_id.toString(),
       price: product.price.toString(),
       cost_price: '0.00',
@@ -259,6 +271,7 @@ const Products: React.FC = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Tax Rate</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Cost Price</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Stock</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Web</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
@@ -288,6 +301,26 @@ const Products: React.FC = () => {
                         <span className={product.stock < 10 ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-gray-900 dark:text-gray-100'}>
                           {product.stock}
                         </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                        <label className="inline-flex items-center mr-4">
+                          <input type="checkbox" className="mr-2" checked={!!product.is_published} onChange={async (e) => {
+                            try {
+                              await api.post('products_management.php', { action: 'set_flags', id: product.id, is_published: e.target.checked ? 1 : 0 })
+                              fetchData()
+                            } catch {}
+                          }} />
+                          <span>Show</span>
+                        </label>
+                        <label className="inline-flex items-center">
+                          <input type="checkbox" className="mr-2" checked={!!product.featured} onChange={async (e) => {
+                            try {
+                              await api.post('products_management.php', { action: 'set_flags', id: product.id, featured: e.target.checked ? 1 : 0 })
+                              fetchData()
+                            } catch {}
+                          }} />
+                          <span>Featured</span>
+                        </label>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button 
@@ -344,6 +377,17 @@ const Products: React.FC = () => {
                     value={formData.sku}
                     onChange={handleInputChange}
                     required 
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-100 bg-white dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Barcode (optional)</label>
+                  <input 
+                    type="text" 
+                    name="barcode" 
+                    value={formData.barcode}
+                    onChange={handleInputChange}
+                    placeholder="Scan or enter barcode"
                     className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-100 bg-white dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                   />
                 </div>
@@ -456,6 +500,17 @@ const Products: React.FC = () => {
                     value={formData.sku}
                     onChange={handleInputChange}
                     required 
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-100 bg-white dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Barcode (optional)</label>
+                  <input 
+                    type="text" 
+                    name="barcode" 
+                    value={formData.barcode}
+                    onChange={handleInputChange}
+                    placeholder="Scan or enter barcode"
                     className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-100 bg-white dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                   />
                 </div>

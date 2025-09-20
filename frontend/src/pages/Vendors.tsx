@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import api from '../services/api';
+import { useConfirm } from '../contexts/ConfirmContext';
 
 interface Vendor {
   id: number;
@@ -13,6 +14,7 @@ interface Vendor {
 
 const Vendors: React.FC = () => {
   const { } = useAuth();
+  const { confirm } = useConfirm();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
@@ -116,9 +118,13 @@ const Vendors: React.FC = () => {
   };
 
   const handleDeleteVendor = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this vendor?')) {
-      return;
-    }
+    const ok = await confirm({
+      title: 'Delete vendor?',
+      message: 'This action cannot be undone.',
+      confirmText: 'Delete',
+      danger: true,
+    });
+    if (!ok) return;
 
     try {
       const response = await api.post('vendors_management.php', {

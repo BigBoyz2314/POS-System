@@ -96,13 +96,13 @@ const Dashboard: React.FC = () => {
                   {[...Array(5)].map((_, index) => (
                     <tr key={index} className="animate-pulse">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
+                        <div className="h-4 bg-gray-100 dark:bg-gray-700 rounded w-24"></div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20"></div>
+                        <div className="h-4 bg-gray-100 dark:bg-gray-700 rounded w-20"></div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16"></div>
+                        <div className="h-4 bg-gray-100 dark:bg-gray-700 rounded w-16"></div>
                       </td>
                     </tr>
                   ))}

@@ -1,6 +1,8 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
+import { SettingsProvider } from './contexts/SettingsContext'
+import { ConfirmProvider } from './contexts/ConfirmContext'
 import { HeaderProvider, useHeader } from './contexts/HeaderContext'
 import { useAuth } from './hooks/useAuth'
 import Header from './components/Header'
@@ -11,6 +13,7 @@ import Vendors from './pages/Vendors'
 import Purchases from './pages/Purchases'
 import Reports from './pages/Reports'
 import Returns from './pages/Returns'
+import Settings from './pages/Settings'
 import Login from './pages/Login'
 import './App.css'
 
@@ -115,7 +118,7 @@ const PurchasesWithHeader: React.FC = () => {
 
 const ReportsWithHeader: React.FC = () => {
   const { showHeader } = useHeader()
-  
+
   return (
     <>
       {showHeader && <Header />}
@@ -126,7 +129,7 @@ const ReportsWithHeader: React.FC = () => {
 
 const ReturnsWithHeader: React.FC = () => {
   const { showHeader } = useHeader()
-  
+
   return (
     <>
       {showHeader && <Header />}
@@ -174,6 +177,14 @@ const AppRoutes: React.FC = () => {
             <ReturnsWithHeader />
           </ProtectedRoute>
         } />
+        <Route path="/settings" element={
+          <ProtectedRoute>
+            <>
+              <Header />
+              <Settings />
+            </>
+          </ProtectedRoute>
+        } />
         <Route path="/sales" element={
           <ProtectedRoute>
             <SalesWithHeader />
@@ -189,9 +200,13 @@ const App: React.FC = () => {
   return (
     <AuthProvider>
       <HeaderProvider>
-        <Router>
-          <AppRoutes />
-        </Router>
+        <SettingsProvider>
+          <ConfirmProvider>
+            <Router>
+              <AppRoutes />
+            </Router>
+          </ConfirmProvider>
+        </SettingsProvider>
       </HeaderProvider>
     </AuthProvider>
   )

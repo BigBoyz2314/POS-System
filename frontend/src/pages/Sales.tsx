@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useConfirm } from '../contexts/ConfirmContext';
 import { apiService } from '../services/api'
 import { useHeader } from '../contexts/HeaderContext'
+import { useSettings } from '../contexts/SettingsContext'
 
 interface Product {
   id: number
   name: string
   sku?: string
+  barcode?: string
   category_name?: string
   price: number // tax-inclusive price (mirrors PHP)
   stock: number
@@ -163,13 +166,16 @@ export default function Sales() {
       }
       // Clear cart with confirmation
       if (key === 'Delete') {
-        if (cart.length > 0 && confirm('Clear all items from the cart?')) setCart([])
+        if (cart.length > 0) {
+          // handled via clearCart flow
+          clearCart()
+        }
         return
       }
       // Clear cart with Alt+C
       if (e.altKey && lower === 'c') {
         e.preventDefault()
-        if (cart.length > 0 && confirm('Clear all items from the cart?')) setCart([])
+        if (cart.length > 0) clearCart()
         return
       }
       // Increase/decrease last item quantity
@@ -281,6 +287,7 @@ export default function Sales() {
             id: Number(p.id),
             name: coalesceString(p.name),
             sku: coalesceString(p.sku, p.SKU, p.product_sku, p.code, p.product_code),
+            barcode: coalesceString(p.barcode, p.BARCODE, p.product_barcode, p.ean, p.upc),
             category_name: coalesceString(p.category_name, p.category),
             price: Number(p.price ?? 0),
             stock: Number(p.stock ?? 0),
@@ -469,11 +476,13 @@ export default function Sales() {
 
   const deleteParked = (entry: ParkedCart) => { saveParked(parkedCarts.filter(p => p.id !== entry.id)) }
 
-  const clearCart = () => { 
-    if (cart.length === 0 || confirm('Clear all items from the cart?')) {
-      setCart([])
-      localStorage.removeItem('pos_cart')
-    }
+  const { confirm } = useConfirm()
+  const clearCart = async () => { 
+    if (cart.length === 0) return
+    const ok = await confirm({ title: 'Clear cart?', message: 'Remove all items from the cart.', confirmText: 'Clear' })
+    if (!ok) return
+    setCart([])
+    localStorage.removeItem('pos_cart')
   }
 
   // Returns/Exchanges functions
@@ -739,6 +748,8 @@ export default function Sales() {
     }
   }
 
+  const { business } = useSettings()
+
   const openPayment = () => {
     setPaymentOpen(true)
     // Reset amounts based on current total (after discount)
@@ -922,8 +933,11 @@ export default function Sales() {
               </style>
             </head>
             <body>
-              <div class="header">
-                <h1 class="title">INVOICE</h1>
+              <div class="header" style="color:#000;">
+                ${business.logoUrl ? `<img src="${business.logoUrl}" alt="logo" style="height:42px; object-fit:contain; margin-bottom:4px;" />` : ''}
+                <h1 class="title">${business.name || 'INVOICE'}</h1>
+                ${business.address ? `<div class="details">${business.address}</div>` : ''}
+                ${business.phone ? `<div class="details">${business.phone}</div>` : ''}
                 <p class="details">Sale #${invoiceData.id}</p>
                 <p class="details">${currentDate} ${currentTime}</p>
               </div>
@@ -1016,7 +1030,7 @@ export default function Sales() {
   }
 
   const searchIndex = (p: Product) => (
-    (p.name || '') + ' ' + (p.sku || '') + ' ' + (p.category_name || '')
+    (p.name || '') + ' ' + (p.sku || '') + ' ' + (p.barcode || '') + ' ' + (p.category_name || '')
   ).toLowerCase()
 
   const filtered = useMemo(() => {
@@ -1025,7 +1039,15 @@ export default function Sales() {
     return products.filter(p => searchIndex(p).includes(q))
   }, [products, searchTerm])
 
-  const stockClass = (stock: number) => stock < 10 ? 'text-red-600' : 'text-green-600'
+  const stockBadge = (stock: number) => {
+    const badgeBase = 'inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium';
+    const cls = stock <= 5
+      ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+      : stock <= 20
+        ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
+        : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300';
+    return <span title={`Stock: ${stock}`} className={`${badgeBase} ${cls}`}>{stock <= 0 ? 'Out' : stock}</span>;
+  }
 
   if (loading) {
     return (
@@ -1035,25 +1057,25 @@ export default function Sales() {
             {/* Product Search Skeleton */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 sm:p-4 flex flex-col min-h-0 md:col-span-1 lg:col-span-5">
               <div className="flex items-center justify-between mb-4">
-                <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-32"></div>
-                <div className="h-8 w-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                <div className="h-6 bg-gray-100 dark:bg-gray-700 rounded animate-pulse w-32"></div>
+                <div className="h-8 w-8 bg-gray-100 dark:bg-gray-700 rounded animate-pulse"></div>
               </div>
               <div className="mb-3 sm:mb-4">
-                <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-md animate-pulse"></div>
+                <div className="h-10 bg-gray-100 dark:bg-gray-700 rounded-md animate-pulse"></div>
               </div>
               <div className="overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-md p-2 flex-1">
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {[...Array(12)].map((_, index) => (
                     <div key={index} className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
                       <div className="space-y-2">
-                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-3/4"></div>
-                        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-1/2"></div>
+                        <div className="h-4 bg-gray-100 dark:bg-gray-700 rounded animate-pulse"></div>
+                        <div className="h-3 bg-gray-100 dark:bg-gray-700 rounded animate-pulse w-3/4"></div>
+                        <div className="h-3 bg-gray-100 dark:bg-gray-700 rounded animate-pulse w-1/2"></div>
                         <div className="flex items-center justify-between mt-2">
-                          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-16"></div>
-                          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-8"></div>
+                          <div className="h-4 bg-gray-100 dark:bg-gray-700 rounded animate-pulse w-16"></div>
+                          <div className="h-3 bg-gray-100 dark:bg-gray-700 rounded animate-pulse w-8"></div>
                         </div>
-                        <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-12"></div>
+                        <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded animate-pulse w-12"></div>
                       </div>
                     </div>
                   ))}
@@ -1065,11 +1087,11 @@ export default function Sales() {
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 sm:p-4 flex flex-col min-h-0 md:col-span-1 lg:col-span-5 relative">
               <div className="absolute top-2 right-2 flex items-center gap-2">
                 {[...Array(4)].map((_, index) => (
-                  <div key={index} className="h-8 w-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                  <div key={index} className="h-8 w-8 bg-gray-100 dark:bg-gray-700 rounded animate-pulse"></div>
                 ))}
               </div>
               
-              <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-32 mb-4"></div>
+              <div className="h-6 bg-gray-100 dark:bg-gray-700 rounded animate-pulse w-32 mb-4"></div>
               
               <div className="overflow-y-auto mb-4 flex-1">
                 <div className="space-y-3">
@@ -1077,16 +1099,16 @@ export default function Sales() {
                     <div key={index} className="border border-gray-200 dark:border-gray-700 rounded p-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3 flex-1">
-                          <div className="h-4 w-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                          <div className="h-4 w-4 bg-gray-100 dark:bg-gray-700 rounded animate-pulse"></div>
                           <div className="space-y-1 flex-1">
-                            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-3/4"></div>
-                            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-1/2"></div>
+                            <div className="h-4 bg-gray-100 dark:bg-gray-700 rounded animate-pulse w-3/4"></div>
+                            <div className="h-3 bg-gray-100 dark:bg-gray-700 rounded animate-pulse w-1/2"></div>
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <div className="h-8 w-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                          <div className="h-6 w-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                          <div className="h-8 w-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                          <div className="h-8 w-8 bg-gray-100 dark:bg-gray-700 rounded animate-pulse"></div>
+                          <div className="h-6 w-12 bg-gray-100 dark:bg-gray-700 rounded animate-pulse"></div>
+                          <div className="h-8 w-8 bg-gray-100 dark:bg-gray-700 rounded animate-pulse"></div>
                         </div>
                       </div>
                     </div>
@@ -1096,28 +1118,28 @@ export default function Sales() {
               
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-16"></div>
-                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-20"></div>
+                  <div className="h-4 bg-gray-100 dark:bg-gray-700 rounded animate-pulse w-16"></div>
+                  <div className="h-4 bg-gray-100 dark:bg-gray-700 rounded animate-pulse w-20"></div>
                 </div>
                 <div className="flex justify-between">
-                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-12"></div>
-                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-16"></div>
+                  <div className="h-4 bg-gray-100 dark:bg-gray-700 rounded animate-pulse w-12"></div>
+                  <div className="h-4 bg-gray-100 dark:bg-gray-700 rounded animate-pulse w-16"></div>
                 </div>
                 <div className="flex justify-between">
-                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-20"></div>
-                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-24"></div>
+                  <div className="h-4 bg-gray-100 dark:bg-gray-700 rounded animate-pulse w-20"></div>
+                  <div className="h-4 bg-gray-100 dark:bg-gray-700 rounded animate-pulse w-24"></div>
                 </div>
                 <div className="border-t pt-2">
                   <div className="flex justify-between">
-                    <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-16"></div>
-                    <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-24"></div>
+                    <div className="h-5 bg-gray-100 dark:bg-gray-700 rounded animate-pulse w-16"></div>
+                    <div className="h-5 bg-gray-100 dark:bg-gray-700 rounded animate-pulse w-24"></div>
                   </div>
                 </div>
               </div>
               
               <div className="mt-4 space-y-2">
-                <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                <div className="h-10 bg-gray-100 dark:bg-gray-700 rounded animate-pulse"></div>
+                <div className="h-10 bg-gray-100 dark:bg-gray-700 rounded animate-pulse"></div>
               </div>
             </div>
           </div>
@@ -1135,12 +1157,57 @@ export default function Sales() {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 sm:p-4 flex flex-col min-h-0 md:col-span-1 lg:col-span-5 text-gray-900 dark:text-gray-100">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-gray-900"><i className="fas fa-search mr-2"></i>Product Search</h2>
-              <button className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white p-2" title="Toggle layout" onClick={() => setSearchLayout(l => l === 'grid' ? 'list' : 'grid')}><i className={`fas ${searchLayout === 'grid' ? 'fa-th-large' : 'fa-list'}`}></i></button>
+              <button
+                className="relative inline-flex w-24 h-8 items-center rounded-full bg-gray-200 dark:bg-gray-700 transition-colors"
+                title="Toggle layout"
+                onClick={() => setSearchLayout(l => l === 'grid' ? 'list' : 'grid')}
+              >
+                <div className="absolute inset-0 flex z-0">
+                  <div className="w-1/2 flex items-center justify-center">
+                    <i className="fas fa-th-large text-sm text-gray-700 dark:text-gray-300 opacity-60"></i>
+                  </div>
+                  <div className="w-1/2 flex items-center justify-center">
+                    <i className="fas fa-list text-sm text-gray-700 dark:text-gray-300 opacity-60"></i>
+                  </div>
+                </div>
+                <span
+                  className={`absolute top-1 left-1 h-6 w-10 rounded-full bg-blue-600 transition-transform z-10 ${searchLayout === 'grid' ? 'translate-x-0' : 'translate-x-12'} flex items-center justify-center text-white`}
+                >
+                  <i className={`fas ${searchLayout === 'grid' ? 'fa-th-large' : 'fa-list'} text-xs`}></i>
+                </span>
+              </button>
             </div>
             <div className="mb-3 sm:mb-4">
               <div className="relative">
                 <i className="fas fa-search absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                <input id="searchInputReact" aria-labelledby="searchInput" type="text" placeholder="Search by product name or SKU..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-8 sm:pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 dark:placeholder-gray-400" />
+                <input id="searchInputReact" aria-labelledby="searchInput" type="text" placeholder="Search by product name or SKU..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const term = (searchTerm || '').trim().toLowerCase();
+                    if (filtered.length === 1) {
+                      addToCart(filtered[0]);
+                      setSearchTerm('');
+                      return;
+                    }
+                    const exactSku = products.find(p => (p.sku || '').toLowerCase() === term);
+                    if (exactSku) {
+                      addToCart(exactSku);
+                      setSearchTerm('');
+                      return;
+                    }
+                    const exactBarcode = products.find(p => (p.barcode || '').toLowerCase() === term);
+                    if (exactBarcode) {
+                      addToCart(exactBarcode);
+                      setSearchTerm('');
+                      return;
+                    }
+                    const exactName = products.find(p => (p.name || '').toLowerCase() === term);
+                    if (exactName) {
+                      addToCart(exactName);
+                      setSearchTerm('');
+                    }
+                  }
+                }} className="w-full pl-8 sm:pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 dark:placeholder-gray-400" />
                 <span id="searchInput" className="sr-only">Product Search</span>
               </div>
             </div>
@@ -1158,7 +1225,7 @@ export default function Sales() {
                       </div>
                       <div className="flex items-center justify-between mt-2">
                         <div className="font-semibold text-gray-900 dark:text-gray-100 text-sm">Rs. {product.price.toFixed(2)}</div>
-                        <span className={`text-xs ${stockClass(product.stock)}`}>({product.stock})</span>
+                        {stockBadge(product.stock)}
                       </div>
                       <div className="text-[10px] text-gray-500 dark:text-gray-400">inc. tax</div>
                     </button>
@@ -1182,7 +1249,7 @@ export default function Sales() {
                           <div className="flex items-center space-x-2">
                             <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">Rs. {product.price.toFixed(2)}</p>
                             <span className="text-xs text-gray-500 dark:text-gray-300">inc. tax</span>
-                            <span className={`text-xs ${stockClass(product.stock)}`}>({product.stock})</span>
+                            {stockBadge(product.stock)}
                           </div>
                         </div>
                       </div>
@@ -1797,8 +1864,11 @@ export default function Sales() {
                     </style>
                   </head>
                   <body>
-                    <div class="header">
-                      <h1 class="title">INVOICE</h1>
+                    <div class="header" style="color:#000; text-align:center;">
+                      ${business.logoUrl ? `<img src="${business.logoUrl}" alt="logo" style="height:42px; object-fit:contain; margin-bottom:4px;" />` : ''}
+                      <h1 class="title">${business.name || 'INVOICE'}</h1>
+                      ${business.address ? `<div class="details">${business.address}</div>` : ''}
+                      ${business.phone ? `<div class="details">${business.phone}</div>` : ''}
                       <p class="details">Sale #${invoiceData.id}</p>
                       <p class="details">${currentDate} ${currentTime}</p>
                     </div>

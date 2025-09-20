@@ -13,13 +13,13 @@ export const Skeleton: React.FC<SkeletonProps> = ({
 }) => {
   return (
     <div 
-      className={`bg-gray-200 dark:bg-gray-700 rounded animate-pulse ${width} ${height} ${className}`}
+      className={`bg-gray-100 dark:bg-gray-700 rounded animate-pulse ${width} ${height} ${className}`}
     />
   );
 };
 
 export const ProductCardSkeleton: React.FC = () => (
-  <div className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
+  <div className="p-3 border border-gray-100 dark:border-gray-700 rounded-lg">
     <div className="space-y-2">
       <Skeleton height="h-4" />
       <Skeleton height="h-3" width="w-3/4" />
@@ -34,7 +34,7 @@ export const ProductCardSkeleton: React.FC = () => (
 );
 
 export const CartItemSkeleton: React.FC = () => (
-  <div className="border border-gray-200 dark:border-gray-700 rounded p-3">
+  <div className="border border-gray-100 dark:border-gray-700 rounded p-3">
     <div className="flex items-center justify-between">
       <div className="flex items-center space-x-3 flex-1">
         <Skeleton height="h-4" width="w-4" />
@@ -73,7 +73,7 @@ export const TableRowSkeleton: React.FC = () => (
 );
 
 export const StatsCardSkeleton: React.FC = () => (
-  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border-l-4 border-gray-300">
+  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border-l-4 border-gray-100">
     <div className="flex items-center">
       <div className="flex-1">
         <Skeleton height="h-3" width="w-24" className="mb-2" />

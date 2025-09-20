@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSettings } from '../contexts/SettingsContext';
 import api from '../services/api';
 import { StatsCardSkeleton, TableRowSkeleton } from '../components/Skeleton';
 
@@ -45,6 +46,7 @@ interface SaleItem {
 }
 
 const Reports: React.FC = () => {
+  const { business } = useSettings();
   const [stats, setStats] = useState<SalesStats>({
     total_sales: 0,
     total_amount: 0,
@@ -147,15 +149,7 @@ const Reports: React.FC = () => {
       <head>
         <title>Invoice</title>
         <style>
-          body { 
-            font-family: Arial, sans-serif; 
-            margin: 0; 
-            padding: 2mm; 
-            font-size: 11px; 
-            line-height: 1.2; 
-            width: 76mm; 
-            overflow-x: hidden; 
-          }
+          body { font-family: Arial, sans-serif; margin: 0; padding: 2mm; font-size: 11px; line-height: 1.2; width: 76mm; overflow-x: hidden; color:#000; background:#fff; }
           table { 
             width: 100%; 
             border-collapse: collapse; 
@@ -200,7 +194,10 @@ const Reports: React.FC = () => {
           <div class="duplicate-watermark">DUPLICATE</div>
           <div style="font-size: 14px; line-height: 1.3; width: 100%; margin: 0; padding: 0 3mm;">
             <div style="margin-bottom: 3px; text-align: center;">
-              <h2 style="font-size: 18px; margin: 0;">INVOICE</h2>
+              ${business.logoUrl ? `<img src="${business.logoUrl}" alt="logo" style="height:42px; object-fit:contain; margin-bottom:4px;" />` : ''}
+              <h2 style="font-size: 18px; margin: 0;">${business.name || 'INVOICE'}</h2>
+              ${business.address ? `<div style=\"font-size:10px; margin:2px 0;\">${business.address}</div>` : ''}
+              ${business.phone ? `<div style=\"font-size:10px; margin:2px 0;\">${business.phone}</div>` : ''}
               <p style="font-size: 12px; margin: 2px 0;">Sale #${selectedSale.id}</p>
               <p style="font-size: 12px; margin: 2px 0;">${new Date(selectedSale.date).toLocaleDateString()} ${new Date(selectedSale.date).toLocaleTimeString()}</p>
             </div>
@@ -290,10 +287,10 @@ const Reports: React.FC = () => {
 
           {/* Filter Controls Skeleton */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
-            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-32 mb-4"></div>
+            <div className="h-6 bg-gray-100 dark:bg-gray-700 rounded animate-pulse w-32 mb-4"></div>
             <div className="flex flex-wrap gap-4 items-end">
-              <div className="h-10 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-              <div className="h-10 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+              <div className="h-10 w-32 bg-gray-100 dark:bg-gray-700 rounded animate-pulse"></div>
+              <div className="h-10 w-32 bg-gray-100 dark:bg-gray-700 rounded animate-pulse"></div>
             </div>
           </div>
 

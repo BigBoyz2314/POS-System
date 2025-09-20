@@ -2,23 +2,37 @@
 deployment:
   tasks:
     - export NODE_OPTIONS=--max_old_space_size=512
-    - 'echo "Starting deployment to: ${DEPLOYPATH:-public_html/pos.theacumentechnologies.com}"'
-    - 'test -n "${DEPLOYPATH:-public_html/pos.theacumentechnologies.com}" || (echo "DEPLOYPATH is not set" && exit 1)'
+    - 'export DEPLOYPATH=${DEPLOYPATH:-public_html}'
+    - 'echo "Starting deployment to: ${DEPLOYPATH}"'
+    - 'test -n "${DEPLOYPATH}" || (echo "DEPLOYPATH is not set" && exit 1)'
 
     # Ensure target directories exist
-    - '/bin/mkdir -p "${DEPLOYPATH:-public_html/pos.theacumentechnologies.com}"'
-    - '/bin/mkdir -p "${DEPLOYPATH:-public_html/pos.theacumentechnologies.com}/api"'
-    - '/bin/mkdir -p "${DEPLOYPATH:-public_html/pos.theacumentechnologies.com}/includes"'
+    - '/bin/mkdir -p "${DEPLOYPATH}"'
+    - '/bin/mkdir -p "${DEPLOYPATH}/api"'
+    - '/bin/mkdir -p "${DEPLOYPATH}/includes"'
+    - '/bin/mkdir -p "${DEPLOYPATH}/admin"'
 
-    # Sync React build files from root (already built locally)
-    - '/bin/rsync -a --delete --exclude=".git" --exclude="node_modules" --exclude="frontend" --exclude="*.yml" --exclude="*.md" --exclude="*.sql" --exclude="*.js" --exclude="*.config.js" --exclude="package*" . "${DEPLOYPATH:-public_html/pos.theacumentechnologies.com}/"'
+    # Deploy Shop (root) - expects shop built locally at shop/dist
+    - '/bin/rsync -a --delete shop/dist/ "${DEPLOYPATH}/"'
+
+    # Deploy POS (admin) - expects frontend built locally at frontend/dist
+    - '/bin/rsync -a --delete frontend/dist/ "${DEPLOYPATH}/admin/"'
+
+    # Deploy admin .htaccess for SPA routing
+    - '/bin/rsync -a admin/.htaccess "${DEPLOYPATH}/admin/.htaccess"'
+
+    # Deploy root .htaccess
+    - '/bin/rsync -a .htaccess "${DEPLOYPATH}/.htaccess"'
+
+    # Deploy shared assets (logo)
+    - '/bin/rsync -a frontend/public/logo-light.png "${DEPLOYPATH}/logo-light.png"'
 
     # Sync PHP API and includes
-    - '/bin/rsync -a api/ "${DEPLOYPATH:-public_html/pos.theacumentechnologies.com}/api/"'
-    - '/bin/rsync -a includes/ "${DEPLOYPATH:-public_html/pos.theacumentechnologies.com}/includes/"'
+    - '/bin/rsync -a api/ "${DEPLOYPATH}/api/"'
+    - '/bin/rsync -a includes/ "${DEPLOYPATH}/includes/"'
 
-    # Tighten permissions (optional, keep simple)
-    - '/bin/find "${DEPLOYPATH:-public_html/pos.theacumentechnologies.com}" -type d -exec chmod 755 {} \;'
-    - '/bin/find "${DEPLOYPATH:-public_html/pos.theacumentechnologies.com}" -type f -exec chmod 644 {} \;'
+    # Tighten permissions (optional)
+    - '/bin/find "${DEPLOYPATH}" -type d -exec chmod 755 {} \;'
+    - '/bin/find "${DEPLOYPATH}" -type f -exec chmod 644 {} \;'
 
     - 'echo "Deployment completed."'
