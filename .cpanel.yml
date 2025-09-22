@@ -5,24 +5,32 @@ deployment:
     - 'export DEPLOYPATH=${DEPLOYPATH:-public_html}'
     - 'echo "Starting deployment to: ${DEPLOYPATH}"'
     - 'test -n "${DEPLOYPATH}" || (echo "DEPLOYPATH is not set" && exit 1)'
+    - 'echo "Deploy path resolved to: ${DEPLOYPATH}"'
 
     # Ensure target directories exist
     - '/bin/mkdir -p "${DEPLOYPATH}"'
     - '/bin/mkdir -p "${DEPLOYPATH}/api"'
     - '/bin/mkdir -p "${DEPLOYPATH}/includes"'
 
+    # Remove legacy admin folder if present (we now deploy POS at root)
+    - '/bin/rm -rf "${DEPLOYPATH}/admin" || true'
+
     # Deploy POS (root) - expects frontend built locally at frontend/dist
-    - '/bin/rsync -a --delete frontend/dist/ "${DEPLOYPATH}/"'
+    - '/bin/rsync -av --delete frontend/dist/ "${DEPLOYPATH}/"'
 
     # Deploy root .htaccess for SPA routing
-    - '/bin/rsync -a .htaccess "${DEPLOYPATH}/.htaccess"'
+    - '/bin/rsync -av .htaccess "${DEPLOYPATH}/.htaccess"'
 
     # Deploy shared assets (logo)
-    - '/bin/rsync -a frontend/public/logo-light.png "${DEPLOYPATH}/logo-light.png"'
+    - '/bin/rsync -av frontend/public/logo-light.png "${DEPLOYPATH}/logo-light.png" || true'
 
     # Sync PHP API and includes
-    - '/bin/rsync -a api/ "${DEPLOYPATH}/api/"'
-    - '/bin/rsync -a includes/ "${DEPLOYPATH}/includes/"'
+    - '/bin/rsync -av api/ "${DEPLOYPATH}/api/"'
+    - '/bin/rsync -av includes/ "${DEPLOYPATH}/includes/"'
+
+    # Show resulting tree for quick verification in the deploy log
+    - '/bin/ls -la "${DEPLOYPATH}"'
+    - '/bin/ls -la "${DEPLOYPATH}/api"'
 
     # Tighten permissions (optional)
     - '/bin/find "${DEPLOYPATH}" -type d -exec chmod 755 {} \;'
