@@ -24,9 +24,14 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api': {
-        target: 'http://localhost',
+        target: 'http://localhost:8080',
         changeOrigin: true,
-        rewrite: (path: string) => path.replace(/^\/api/, '/POS%20system/api'),
+        // Keep dev-only verbose logs minimal and avoid TS typing issues in node config
+        configure: (proxy: any) => {
+          proxy.on('error', (err: any) => {
+            console.log('proxy error', err)
+          })
+        },
       },
     },
   },

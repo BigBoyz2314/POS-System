@@ -4,8 +4,8 @@ frontend/.vite/
 # frontend/dist/  # Commented out for cPanel deployment
 frontend/.env*
 
-# Shop build directory (needed for cPanel deployment)
-# shop/dist/  # Commented out for cPanel deployment
+# Shop directory (removed from deployment)
+shop/
 
 # Logs
 npm-debug.log*

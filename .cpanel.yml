@@ -10,18 +10,11 @@ deployment:
     - '/bin/mkdir -p "${DEPLOYPATH}"'
     - '/bin/mkdir -p "${DEPLOYPATH}/api"'
     - '/bin/mkdir -p "${DEPLOYPATH}/includes"'
-    - '/bin/mkdir -p "${DEPLOYPATH}/admin"'
 
-    # Deploy Shop (root) - expects shop built locally at shop/dist
-    - '/bin/rsync -a --delete shop/dist/ "${DEPLOYPATH}/"'
+    # Deploy POS (root) - expects frontend built locally at frontend/dist
+    - '/bin/rsync -a --delete frontend/dist/ "${DEPLOYPATH}/"'
 
-    # Deploy POS (admin) - expects frontend built locally at frontend/dist
-    - '/bin/rsync -a --delete frontend/dist/ "${DEPLOYPATH}/admin/"'
-
-    # Deploy admin .htaccess for SPA routing
-    - '/bin/rsync -a admin/.htaccess "${DEPLOYPATH}/admin/.htaccess"'
-
-    # Deploy root .htaccess
+    # Deploy root .htaccess for SPA routing
     - '/bin/rsync -a .htaccess "${DEPLOYPATH}/.htaccess"'
 
     # Deploy shared assets (logo)

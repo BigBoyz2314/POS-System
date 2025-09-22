@@ -1,23 +1,6 @@
 Options -Indexes
 RewriteEngine On
 
-# Allow API and Admin to pass through
-RewriteCond %{REQUEST_URI} ^/api [NC]
-RewriteRule ^ - [L]
-RewriteCond %{REQUEST_URI} ^/admin [NC]
-RewriteRule ^ - [L]
-
-# Serve existing files
-RewriteCond %{REQUEST_FILENAME} -f [OR]
-RewriteCond %{REQUEST_FILENAME} -d
-RewriteRule ^ - [L]
-
-# SPA fallback for root Shop
-RewriteRule ^ index.html [L]
-
-Options -Indexes
-RewriteEngine On
-
 # Handle API calls
 RewriteCond %{REQUEST_URI} ^/api [NC]
 RewriteRule ^ - [L]
@@ -27,5 +10,5 @@ RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
 
-# SPA fallback
+# SPA fallback for POS at root
 RewriteRule ^ index.html [L]
